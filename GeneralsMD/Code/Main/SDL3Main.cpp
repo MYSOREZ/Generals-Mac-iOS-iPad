@@ -344,23 +344,32 @@ int main(int argc, char* argv[])
 				}
 
 				// One-time tidy-up: remove asset copies from Documents now that
-				// the bundle carries them. Only known asset names are touched;
-				// anything user-placed stays.
+				// the bundle carries them. Guarded by a sentinel so it truly runs
+				// once — Documents is exposed via the Files app, and anything the
+				// user places there later (mods, custom maps) must never be touched.
+				// "Maps" is deliberately NOT in the list: it is where user maps live.
 				char docs[1024];
 				snprintf(docs, sizeof(docs), "%s/Documents", home);
-				std::error_code fsError;
-				for (const auto &entry : std::filesystem::directory_iterator(docs, fsError)) {
-					const std::string name = entry.path().filename().string();
-					const bool isShippedAsset =
-						(name.size() > 4 && name.compare(name.size() - 4, 4, ".big") == 0) ||
-						name == "Data" || name == "Window" || name == "ZH_Generals" ||
-						name == "Maps" || name == "fonts" || name == "_CommonRedist" ||
-						name == "dxvk.conf" || name == "GeneralsXZH.dxvk-cache" ||
-						name == "GeneralsXZH_d3d9.log";
-					if (isShippedAsset) {
-						std::error_code removeError;
-						std::filesystem::remove_all(entry.path(), removeError);
+				char sentinel[1024];
+				snprintf(sentinel, sizeof(sentinel), "%s/.bundle-assets-tidied", docs);
+				if (access(sentinel, F_OK) != 0) {
+					std::error_code fsError;
+					for (const auto &entry : std::filesystem::directory_iterator(docs, fsError)) {
+						const std::string name = entry.path().filename().string();
+						const bool isShippedAsset =
+							(name.size() > 4 && name.compare(name.size() - 4, 4, ".big") == 0) ||
+							name == "Data" || name == "Window" || name == "ZH_Generals" ||
+							name == "fonts" || name == "_CommonRedist" ||
+							name == "dxvk.conf" || name == "GeneralsXZH.dxvk-cache" ||
+							name == "GeneralsXZH_d3d9.log";
+						if (isShippedAsset) {
+							fprintf(stderr, "INFO: tidy-up removing shipped asset copy: %s\n", name.c_str());
+							std::error_code removeError;
+							std::filesystem::remove_all(entry.path(), removeError);
+						}
 					}
+					FILE *s = fopen(sentinel, "w");
+					if (s) fclose(s);
 				}
 			}
 		}

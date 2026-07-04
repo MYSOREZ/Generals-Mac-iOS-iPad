@@ -16,4 +16,4 @@
 	branch = generalsx-macos-v2.6
 [submodule "GeneralsReplays"]
 	path = GeneralsReplays
-	url = git@github.com:fbraz3/GeneralsXReplays.git
+	url = https://github.com/fbraz3/GeneralsXReplays.git

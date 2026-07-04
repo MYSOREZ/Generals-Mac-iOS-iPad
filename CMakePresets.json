@@ -239,6 +239,45 @@
                 "PKG_CONFIG_PATH": "/opt/homebrew/lib/pkgconfig"
             },
             "description": "Phase 5 macOS port: arm64 native (Apple Silicon) with MoltenVK for graphics, SDL3 for windowing, OpenAL for audio. Universal binary deferred until all dylib deps have fat versions."
+        },
+        {
+            "name": "ios-vulkan",
+            "displayName": "iOS (MoltenVK + SDL3 + OpenAL) arm64 Device",
+            "inherits": "default-vcpkg",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "description": "iOS port: arm64 device build with MoltenVK (static, from $VULKAN_SDK) for graphics, SDL3 for windowing/touch, OpenAL for audio, FFmpeg (vcpkg) for video. Requires the LunarG Vulkan SDK with the iOS MoltenVK xcframework; export VULKAN_SDK=$HOME/VulkanSDK/<version>/macOS.",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_SYSTEM_NAME": "iOS",
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "16.0",
+                "CMAKE_OSX_SYSROOT": "iphoneos",
+                "VCPKG_TARGET_TRIPLET": "arm64-ios",
+                "VCPKG_OVERLAY_TRIPLETS": "${sourceDir}/cmake/triplets",
+                "SAGE_USE_DX8": "OFF",
+                "SAGE_USE_SDL3": "ON",
+                "SAGE_USE_OPENAL": "ON",
+                "SAGE_USE_GLM": "ON",
+                "SAGE_USE_MOLTENVK": "ON",
+                "SAGE_DXVK_USE_LOCAL_FORK": "ON",
+                "SAGE_UPDATE_CHECK": "OFF",
+                "RTS_CRASHDUMP_ENABLE": "OFF",
+                "RTS_BUILD_OPTION_FFMPEG": "ON",
+                "RTS_BUILD_OPTION_SAGE_PATCH": "OFF",
+                "RTS_BUILD_GENERALS": "OFF",
+                "RTS_BUILD_CORE_TOOLS": "OFF",
+                "RTS_BUILD_ZEROHOUR_TOOLS": "OFF",
+                "RTS_BUILD_ZEROHOUR_EXTRAS": "OFF",
+                "Vulkan_INCLUDE_DIR": "$env{VULKAN_SDK}/include",
+                "Vulkan_LIBRARY": "$env{VULKAN_SDK}/lib/MoltenVK.xcframework/ios-arm64/libMoltenVK.a",
+                "Vulkan_MoltenVK_LIBRARY": "$env{VULKAN_SDK}/lib/MoltenVK.xcframework/ios-arm64/libMoltenVK.a",
+                "Vulkan_MoltenVK_INCLUDE_DIR": "$env{VULKAN_SDK}/include"
+            },
+            "environment": {
+                "PKG_CONFIG_PATH": ""
+            }
         }
     ],
     "buildPresets": [

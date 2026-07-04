@@ -39,7 +39,8 @@ if(SAGE_USE_DETERMINISTIC_MATH)
     endif()
     
     if(NOT SAGE_GAMEMATH_GIT_TAG)
-        set(SAGE_GAMEMATH_GIT_TAG "main")
+        # Pinned SHA: tracking "main" let the deterministic-math source drift silently.
+        set(SAGE_GAMEMATH_GIT_TAG "838f9d0fd1c658ec795d3903a4f3f7e265b6e6d5")
     endif()
 
     FetchContent_Declare(

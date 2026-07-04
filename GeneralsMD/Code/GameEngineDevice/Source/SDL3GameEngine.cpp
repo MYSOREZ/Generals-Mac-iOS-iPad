@@ -321,6 +321,12 @@ void handleTouchEvent(SDL3Mouse *mouse, SDL_Window *window, const SDL_Event &eve
 		}
 		switch (s_touch.phase) {
 			case TouchState::PENDING:
+				// A CANCELED touch (incoming call, notification shade, palm
+				// rejection) must not become a committed tap — that would be a
+				// phantom select/command/rally-point click at the cancel point.
+				if (event.type == SDL_EVENT_FINGER_CANCELED) {
+					break;
+				}
 				// Clean tap: deliver the full click at the exact press position.
 				sendSyntheticMouse(mouse, window, SDL_EVENT_MOUSE_MOTION, s_touch.downX, s_touch.downY);
 				sendSyntheticMouse(mouse, window, SDL_EVENT_MOUSE_BUTTON_DOWN,

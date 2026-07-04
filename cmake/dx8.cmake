@@ -124,7 +124,13 @@ elseif(APPLE AND SAGE_USE_MOLTENVK)
   # iOS cross-compiles DXVK with a meson cross file (iPhoneOS sysroot); macOS uses
   # the native file. Arch/sysroot flags come from the machine file in both cases.
   if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    set(DXVK_MESON_MACHINE_ARGS --cross-file ${CMAKE_SOURCE_DIR}/cmake/meson-arm64-ios-cross.ini)
+    # The cross file is generated from a template so the iPhoneOS SDK path comes
+    # from xcrun (Xcode-beta / renamed installs) instead of a hardcoded Xcode.app.
+    execute_process(COMMAND xcrun --sdk iphoneos --show-sdk-path
+                    OUTPUT_VARIABLE IOS_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/meson-arm64-ios-cross.ini.in
+                   ${CMAKE_BINARY_DIR}/meson-arm64-ios-cross.ini @ONLY)
+    set(DXVK_MESON_MACHINE_ARGS --cross-file ${CMAKE_BINARY_DIR}/meson-arm64-ios-cross.ini)
   else()
     set(DXVK_MESON_MACHINE_ARGS --native-file ${CMAKE_SOURCE_DIR}/cmake/meson-arm64-native.ini)
   endif()

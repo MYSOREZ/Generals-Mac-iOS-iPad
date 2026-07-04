@@ -11,8 +11,20 @@
 #      provisioning profile from step 1, preserving entitlements.
 #   5. Optional: install to the first connected device via devicectl.
 #
-# Usage: ./scripts/build/ios/package-ios-zh.sh [--install]
+# Usage: ./scripts/build/ios/package-ios-zh.sh [--dev] [--install]
+#   --dev      skip bundling the 2.7 GB of game assets (code-only iteration)
+#   --install  install the packaged app to the first connected device
 set -euo pipefail
+
+DEV_MODE=0
+DO_INSTALL=0
+for arg in "$@"; do
+    case "$arg" in
+        --dev)     DEV_MODE=1 ;;
+        --install) DO_INSTALL=1 ;;
+        *) echo "ERROR: unknown argument '$arg' (usage: $0 [--dev] [--install])"; exit 1 ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
@@ -76,7 +88,14 @@ for lib in \
         cp "${lib}" "${APP}/Frameworks/"
         echo "    embedded $(basename "${lib}")"
     else
-        echo "    (skip, not built: $(basename "${lib}"))"
+        case "$(basename "${lib}")" in
+            libgamespy.dylib|libopenal.1.dylib)
+                echo "    (skip, optional: $(basename "${lib}"))" ;;
+            *)
+                echo "ERROR: required dylib not built: ${lib}"
+                echo "  Build first: cmake --preset ios-vulkan && cmake --build build/ios-vulkan --target z_generals"
+                exit 1 ;;
+        esac
     fi
 done
 
@@ -94,8 +113,8 @@ if [[ -d "${MVK_FRAMEWORK}" ]]; then
     echo "    embedded MoltenVK.framework"
 else
     echo "ERROR: MoltenVK.framework not found at ${MVK_FRAMEWORK}"
-    echo "  Download MoltenVK-ios.tar from https://github.com/KhronosGroup/MoltenVK/releases"
-    echo "  and extract it under ~/GeneralsX/MoltenVK (or set GX_MOLTENVK)."
+    echo "  Run scripts/build/ios/fetch-moltenvk.sh (pinned version + checksum)."
+    
     exit 1
 fi
 
@@ -104,11 +123,11 @@ fi
 # for fast code-only iterations (the engine falls back to Documents assets).
 GAME_DATA_SRC="${GX_GAME_DATA:-${HOME}/GeneralsX/GeneralsZH}"
 FONTS_SRC="${GX_FONTS:-${HOME}/GeneralsX/ios-staging/fonts}"
-CONFIG_SRC="${GX_CONFIG:-${HOME}/GeneralsX/ios-staging-config}"
-if [[ "${1:-}" != "--dev" ]]; then
+CONFIG_SRC="${GX_CONFIG:-${IOS_DIR}/config}"
+if [[ "${DEV_MODE}" != "1" ]]; then
     echo "==> Bundling game assets into the app"
     mkdir -p "${APP}/GameData"
-    rsync -a \
+    rsync -a --exclude=".*" \
         --exclude="*.dylib" --exclude="run.sh" --exclude="GeneralsXZH" \
         --exclude="GeneralsXZH.dxvk-cache" --exclude="*_d3d9.log" \
         --exclude="MoltenVK_icd.json" --exclude="dxvk.conf" --exclude="fontconfig" \
@@ -121,9 +140,20 @@ if [[ "${1:-}" != "--dev" ]]; then
     if [[ -d "${FONTS_SRC}" ]]; then
         mkdir -p "${APP}/GameData/fonts"
         cp "${FONTS_SRC}"/*.ttf "${APP}/GameData/fonts/"
+    else
+        echo "ERROR: fonts not staged at ${FONTS_SRC} — the app would render no text."
+        echo "  Run scripts/build/ios/stage-fonts.sh once (downloads Liberation fonts and"
+        echo "  renames them to the arial/couriernew/timesnewroman names the game expects)."
+        exit 1
     fi
-    [[ -f "${CONFIG_SRC}/dxvk.conf" ]]   && cp "${CONFIG_SRC}/dxvk.conf" "${APP}/GameData/dxvk.conf"
-    [[ -f "${CONFIG_SRC}/Options.ini" ]] && cp "${CONFIG_SRC}/Options.ini" "${APP}/GameData/DefaultOptions.ini"
+    for cfg in dxvk.conf Options.ini; do
+        if [[ ! -f "${CONFIG_SRC}/${cfg}" ]]; then
+            echo "ERROR: ${CONFIG_SRC}/${cfg} missing (should ship with the repo in ios/config/)"
+            exit 1
+        fi
+    done
+    cp "${CONFIG_SRC}/dxvk.conf" "${APP}/GameData/dxvk.conf"
+    cp "${CONFIG_SRC}/Options.ini" "${APP}/GameData/DefaultOptions.ini"
     echo "    bundled $(du -sh "${APP}/GameData" | cut -f1) of game data"
 fi
 
@@ -158,7 +188,7 @@ codesign --verify --deep "${APP}" && echo "    signature OK"
 
 echo "==> App ready: ${APP}"
 
-if [[ "${1:-}" == "--install" ]]; then
+if [[ "${DO_INSTALL}" == "1" ]]; then
     echo "==> Installing to connected device"
     DEVICE_ID=$(xcrun devicectl list devices 2>/dev/null | awk '/connected/{print $(NF-2); exit}')
     if [[ -z "${DEVICE_ID}" ]]; then

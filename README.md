@@ -1,104 +1,93 @@
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/fbraz3/GeneralsGameCode)
-[![GeneralsX CI](https://github.com/fbraz3/GeneralsX/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fbraz3/GeneralsX/actions/workflows/ci.yml)
-[![GitHub Release](https://img.shields.io/github/v/release/fbraz3/GeneralsX?include_prereleases&sort=date&display_name=tag&style=flat&label=Release)](https://github.com/fbraz3/GeneralsX/releases)
+# Command & Conquer Generals: Zero Hour — macOS, iOS & iPadOS
 
-# GeneralsX - Cross-Platform Command & Conquer: Generals
+**Zero Hour running natively on Apple Silicon Macs, iPhone, and iPad** — campaign,
+skirmish, and Generals Challenge, with touch controls built for RTS (tap-select,
+drag-box, long-press deselect, two-finger scroll, pinch zoom). No emulation: this
+is the real 2003 engine compiled for ARM64, rendering DirectX 8 →
+[DXVK](https://github.com/doitsujin/dxvk) → Vulkan →
+[MoltenVK](https://github.com/KhronosGroup/MoltenVK) → Metal.
 
-GeneralsX delivers **Linux and macOS** builds of **Command & Conquer: Generals and Zero Hour** through a single modern codebase.
+Built on EA's GPL v3 source release via [fbraz3/GeneralsX](https://github.com/fbraz3/GeneralsX)
+(which did the heavy lifting of the macOS/Linux port — this fork adds the iOS/iPadOS
+port and a set of engine fixes). The original GeneralsX README lives on the `main` branch.
 
-> Note: This project is not related to any mods with similar names and does not aim to extend or modify gameplay.
+**No game assets are included or distributed.** You need your own copy
+([Steam](https://store.steampowered.com/app/2732960/), ~$5 on sale).
 
-## How to download
+## Quick start — macOS
 
-For **official releases and instructions**, visit:
+Prerequisites (one time):
 
-* [GeneralsX Releases](https://github.com/fbraz3/GeneralsX/releases)  - Linux and Mac
-* [TheSuperHackers Releases](https://github.com/TheSuperHackers/GeneralsGameCode/releases) - Windows
-* [Fighter19 Releases](https://github.com/Fighter19/CnC_Generals_Zero_Hour/releases) - Original Linux-focused Zero Hour reference releases
+```sh
+# Toolchain
+xcode-select --install
+brew install cmake ninja meson pkgconf
+brew install --cask steamcmd
 
-> See our [Tutorial Docs](docs/HOWTO/README.md) for step-by-step guides.
+# vcpkg (full clone — a shallow clone breaks manifest baselines)
+git clone https://github.com/microsoft/vcpkg ~/vcpkg && ~/vcpkg/bootstrap-vcpkg.sh
+export VCPKG_ROOT=~/vcpkg          # add to your shell profile
 
-## Where does the GeneralsX name come from?
+# LunarG Vulkan SDK (NOT the Homebrew cask) — https://vulkan.lunarg.com/sdk/home
+export VULKAN_SDK=$HOME/VulkanSDK/<version>/macOS   # add to your shell profile
+```
 
-There are two reasons for this name:
+Clone, build, get assets, play:
 
-1. X = Cross - reflects the cross-platform efforts
-2. I am a big fan of the Mega Man X franchise, so this is also a tribute to that classic series.
+```sh
+git clone -b ios-port https://github.com/ammaarreshi/GeneralsX-apple.git GeneralsX
+cd GeneralsX
+./scripts/build/macos/build-macos-zh.sh     # checks deps, configures, builds
+./scripts/build/macos/deploy-macos-zh.sh    # creates ~/GeneralsX/GeneralsZH + run.sh
+./scripts/get-assets.sh <your_steam_username>   # fetches game data you own
+cd ~/GeneralsX/GeneralsZH && ./run.sh -win
+```
 
-## Project Goals
+## Quick start — iPhone / iPad
 
-GeneralsX exists to turn upstream preservation and porting work into a practical and maintainable project for active Linux and macOS players.
+On top of the macOS prerequisites: full Xcode (signed into your Apple ID),
+`brew install xcodegen`, and a (free or paid) Apple Developer team.
 
-Its main goals are:
+```sh
+cd GeneralsX
+git submodule update --init references/fbraz3-dxvk   # iOS DXVK is built from this + Patches/dxvk-ios.patch
+./scripts/build/ios/fetch-moltenvk.sh                # pinned MoltenVK.framework (checksummed)
+./scripts/build/ios/stage-fonts.sh                   # Liberation fonts, renamed as the game expects
+cmake --preset ios-vulkan
+cmake --build build/ios-vulkan --target z_generals
+GX_TEAM_ID=<your-team-id> GX_BUNDLE_ID=com.you.generalszh \
+    ./scripts/build/ios/package-ios-zh.sh --install  # assembles, signs, installs
+```
 
-- Preserve retail gameplay behavior while modernizing the platform layer.
-- Maintain a **single codebase** with Linux and macOS as the active targets, while keeping a future Windows path possible.
-- Carry the adaptation work needed to make the stack function in practice across supported platforms, including repository-specific fixes when upstream constraints leave gaps.
-- Deliver reproducible builds, packaging, and release workflows that make the port usable beyond local development setups.
-- Replace the original Windows-only DirectX 8 / Miles stack with portable open-source equivalents where appropriate.
-- Keep upstream lineage clear by distinguishing foundational work from the integration, packaging, and platform support specific to GeneralsX.
+Find your team id in Xcode → Settings → Accounts. Assets ship inside the app
+bundle (self-contained install); `--dev` skips the ~2.7 GB copy for fast code
+iteration.
 
-To stay up to date on project status, visit our [Dev Blog](docs/DEV_BLOG/).
+## Where things are
 
-## How does this project relate to other community projects?
+| Path | What it is |
+|---|---|
+| `docs/port/PORTING_PLAYBOOK.md` | The complete engineering log of this port: every failure mode, root cause, fix |
+| `docs/port/PORTING_PATTERNS.md` | Generalized methodology for porting classic Windows games to Apple platforms |
+| `docs/port/RELEASE_CHECKLIST.md` | Gate for public release |
+| `scripts/get-assets.sh` | Steam asset fetcher (your own copy; app 2732960) |
+| `scripts/build/macos/`, `scripts/build/ios/` | Build, deploy, packaging pipelines |
+| `ios/` | XcodeGen signing-stub project + `ios/config/` (staged Options.ini, dxvk.conf) |
+| `Patches/dxvk-ios.patch` | DXVK changes the iOS d3d8/d3d9 dylibs are built from (applied via the local-fork build) |
 
-GeneralsX builds on complementary community efforts with different roles.
+## Known issues
 
-**TheSuperHackers** provides the main upstream foundation for stability, bug fixes, retail compatibility, and long-term maintenance of the original game code.
+- Long sessions on iPad can be killed by iOS for memory (~3 GB+ resident); the app
+  exits to the home screen with no dialog. Session logs (current + previous) are in
+  the Files app under the game's folder. Under investigation.
+- Backgrounding mid-game can occasionally crash on iOS — the lifecycle pause covers
+  the common paths; a rare race remains. Save often.
+- EVA/announcer speech is silent on iOS in some modes — under active investigation.
 
-**Fighter19's fork**, including major work by **feliwir**, is a key Zero Hour cross-platform reference that established much of the ecosystem groundwork used here, including SDL3 windowing, DXVK-based rendering, OpenAL audio, FFmpeg media support, filesystem modernization, and related Linux-focused portability work.
+## License & credits
 
-While GeneralsX builds on important community work, this project also includes substantial original effort in integration, adaptation, platform-specific fixes, enhancements, testing, packaging, and ongoing maintenance.
-
-Because these projects serve different but complementary goals, not every change belongs in the same place. Improvements aligned with upstream stability or core maintenance priorities should be contributed back to TheSuperHackers, while GeneralsX keeps changes specific to cross-platform delivery, packaging, and platform integration.
-
-## 💖 Support This Project
-
-The optional sponsorship link exists to help cover the maintenance costs specific to GeneralsX: Linux/macOS integration, project-specific adaptation work, testing infrastructure, packaging, tooling, release work, and documentation.
-
-- **[Sponsor on GitHub](https://github.com/sponsors/fbraz3)**
-
-Your support specifically helps with:
-
-- **Integration, Adaptation and Enhancements** - Merging reference work, resolving incompatibilities, and carrying project-specific fixes needed for supported platforms
-- **Testing Infrastructure** - Validation across Linux and macOS, plus exploratory work needed to keep future platform paths viable
-- **Packaging & Releases** - AppImage, Flatpak, macOS bundles, CI pipeline
-- **Documentation & Maintenance** - Build guides, installation instructions, developer resources, and ongoing repository upkeep
-
-Please also consider supporting the upstream community efforts that made this possible:
-
-- [TheSuperHackers/GeneralsGameCode](https://github.com/TheSuperHackers/GeneralsGameCode)
-- [Fighter19/CnC_Generals_Zero_Hour](https://github.com/Fighter19/CnC_Generals_Zero_Hour)
-
-##  Building from Source
-
-- [ Linux Build Guide](docs/BUILD/LINUX.md)
-- [ macOS Build Guide](docs/BUILD/MACOS.md)
-
-###  Known Issues & Limitations
-
-For documented limitations and known bugs, check the [issues page](https://github.com/fbraz3/GeneralsX/issues).
-
----
-
-## 🤝 How to Contribute
-
-1. Check [current issues](https://github.com/fbraz3/GeneralsX/issues) and [GitHub discussions](https://github.com/fbraz3/GeneralsX/discussions)
-2. Read platform-specific build guides ([Windows](docs/ETC/), [macOS](docs/BUILD/MACOS.md), [Linux](docs/BUILD/LINUX.md))
-3. Follow [CONTRIBUTING.md](CONTRIBUTING.md) guidelines
-4. Submit issues or pull requests with detailed information
-
-## 🙏 Special Thanks
-
-- **[Westwood Studios](https://cnc-comm.com/westwood-studios)** for creating the legendary Command & Conquer series
-- **[EA Games](https://www.ea.com/)** for Command & Conquer: Generals, which continues to inspire gaming communities
-- **[TheSuperHackers / Xezon](https://github.com/TheSuperHackers/GeneralsGameCode)** and contributors for the upstream stability, bug fixes, and code modernization that form the foundation of GeneralsX
-- **[Fighter19](https://github.com/Fighter19)** for the cross-platform port that pioneered SDL3 windowing, DXVK graphics, and MinGW build support on Linux
-- **[feliwir](https://github.com/feliwir)** for the foundational cross-platform systems implemented in Fighter19's fork: OpenAL audio, FFmpeg video decoding, C++17 filesystem, and Freetype/Fontconfig text rendering
-- **All contributors and sponsors** for helping to make this game truly cross-platform and accessible worldwide
-
-## 📄 License
-
-See the [LICENSE](./LICENSE.md) file for details.
-
-EA has not endorsed and does not support this product. All trademarks are the property of their respective owners.
+Engine code **GPL v3** (EA's source release → GeneralsX → this fork). Game assets:
+not included, not licensed here. Credits: Westwood/EA Pacific (the game), EA (the
+source release), fbraz3/GeneralsX (the base port),
+TheSuperHackers/GeneralsGameCode (community mainline), DXVK, MoltenVK, SDL,
+OpenAL Soft, FFmpeg, Liberation Fonts.
