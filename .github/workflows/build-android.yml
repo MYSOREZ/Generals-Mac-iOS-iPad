@@ -54,6 +54,10 @@ jobs:
       # today doesn't silently pick up a different toolchain in six months.
       NDK_VERSION: "27.2.12479018"
       GRADLE_VERSION: "8.9"
+      # cmdline-tools zip (pinned + sha1 from Google's repository2-3.xml manifest);
+      # its sdkmanager then installs the NDK/platform/build-tools above.
+      CMDLINE_TOOLS_VERSION: "13114758"
+      CMDLINE_TOOLS_SHA1: "5fdcc763663eefb86a5b8879697aa6088b041e70"
 
     steps:
       # GeneralsX @build Android CI 06/07/2026 Node 24 compatible action majors, matching the other platform workflows.
@@ -77,18 +81,42 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # GeneralsX @build Android CI 06/07/2026 ubuntu-latest GitHub-hosted runners
-      # ship a full Android SDK (cmdline-tools, licenses pre-accepted, ANDROID_HOME
-      # set) — see actions/runner-images. Installing packages through its own
-      # sdkmanager is simpler and more robust than fetching a raw NDK zip by hand:
-      # it reuses the runner's already-configured SDK root and needs no separate
-      # platform-tools/build-tools step, both of which AGP also requires.
-      - name: Install Android SDK packages (NDK + platform + build-tools)
+      # GeneralsX @bugfix Android CI 06/07/2026 ubuntu-24.04 runner images do NOT
+      # ship an Android SDK (run #1 died with "sdkmanager: command not found") —
+      # install cmdline-tools from a pinned, checksummed zip and let its own
+      # sdkmanager pull the NDK, platform and build-tools. Checksum comes from
+      # Google's repository manifest (repository2-3.xml), same discipline as the
+      # Vulkan SDK download in build-macos.yml.
+      - name: Cache Android SDK
+        id: cache-android-sdk
+        uses: actions/cache@v5
+        with:
+          path: /opt/android-sdk
+          key: android-sdk-${{ env.CMDLINE_TOOLS_VERSION }}-ndk${{ env.NDK_VERSION }}-p35-bt35
+      - name: Install Android SDK (cmdline-tools + NDK + platform + build-tools)
+        if: steps.cache-android-sdk.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          sdkmanager --install "ndk;${{ env.NDK_VERSION }}" "platforms;android-35" "build-tools;35.0.0"
-          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/${{ env.NDK_VERSION }}" >> "$GITHUB_ENV"
+          curl -fL --retry 3 -o /tmp/cmdline-tools.zip \
+            "https://dl.google.com/android/repository/commandlinetools-linux-${{ env.CMDLINE_TOOLS_VERSION }}_latest.zip"
+          echo "${{ env.CMDLINE_TOOLS_SHA1 }}  /tmp/cmdline-tools.zip" | sha1sum -c -
+          sudo mkdir -p /opt/android-sdk/cmdline-tools
+          sudo unzip -q /tmp/cmdline-tools.zip -d /opt/android-sdk/cmdline-tools
+          # sdkmanager requires the "<sdk>/cmdline-tools/latest" layout to locate its SDK root
+          sudo mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest
+          sudo chown -R "$(id -u):$(id -g)" /opt/android-sdk
+          rm /tmp/cmdline-tools.zip
+          SDKMANAGER=/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "ndk;${{ env.NDK_VERSION }}" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+      - name: Export Android SDK environment
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=/opt/android-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=/opt/android-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=/opt/android-sdk/ndk/${{ env.NDK_VERSION }}" >> "$GITHUB_ENV"
+          test -f "/opt/android-sdk/ndk/${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake" \
+            || { echo "::error::NDK toolchain file missing after install"; exit 1; }
 
       # Gradle: this project intentionally doesn't commit a wrapper (binary jar),
       # so use Gradle's own official action, which downloads + verifies the
@@ -114,8 +142,16 @@ jobs:
         id: cache-vcpkg
         uses: actions/cache@v5
         with:
-          path: /opt/vcpkg
-          key: vcpkg-android-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-lock.json') }}
+          # /opt/vcpkg = the tool + ports tree; ~/.cache/vcpkg = the BINARY
+          # cache of already-built packages. The binary cache is what turns the
+          # ~45 min ffmpeg/openssl/curl cross-build into a ~1 min restore — and
+          # because actions/cache saves in its post step even when a later build
+          # step fails, iteration on engine compile errors doesn't re-pay the
+          # dependency build each round.
+          path: |
+            /opt/vcpkg
+            ~/.cache/vcpkg
+          key: vcpkg-android-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-lock.json', 'cmake/triplets/arm64-android.cmake') }}
           restore-keys: |
             vcpkg-android-${{ runner.os }}-
 
