@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.generalsx.zerohour'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.generalsx.zerohour'
+        // API 28 (Android 9): floor that still covers the Redmi Note 8 Pro
+        // line while giving bionic glob(3) and stable Vulkan loader behavior.
+        // The real graphics gate is the GPU driver, not the OS version — see
+        // docs/port/ANDROID_PORT.md (DXVK 2.6 needs Vulkan 1.3).
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName '1.04-android1'
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    sourceSets {
+        main {
+            // Both directories are STAGED by scripts/build/android/package-android-zh.sh
+            // (gitignored): jniLibs/ receives the CMake-built .so set, java-sdl/
+            // receives org/libsdl/app/*.java from the in-tree SDL3 source so the
+            // shell always matches the exact SDL version the game linked.
+            java.srcDirs += 'src/main/java-sdl'
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            // Small runtime files bundled into the APK and extracted to the
+            // external files dir on first launch: fonts/, dxvk.conf,
+            // DefaultOptions.ini (staged by the packaging script).
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+
+    buildTypes {
+        debug {
+            // Debug APKs are the sideload path (adb install); nothing to configure.
+        }
+        release {
+            minifyEnabled false
+            // Sideload builds sign with the debug key unless the user provides
+            // a signingConfig; Play distribution is out of scope for a GPL port
+            // of a game whose assets the user must own.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            // Keep .so files compressed in the APK and let the platform linker
+            // open them in place (Android 9+ default). dlopen("libdxvk_d3d8.so")
+            // from native code resolves through the app's linker namespace
+            // either way.
+            useLegacyPackaging false
+        }
+    }
+}

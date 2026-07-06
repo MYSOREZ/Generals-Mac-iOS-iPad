@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Five-pointed star, centered in the adaptive-icon safe zone -->
+    <path
+        android:fillColor="#E8C547"
+        android:pathData="M54,30 L59.9,47.2 L78,47.2 L63.4,58 L69,75.6 L54,65 L39,75.6 L44.6,58 L30,47.2 L48.1,47.2 Z" />
+</vector>
