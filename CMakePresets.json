@@ -285,7 +285,7 @@
             "inherits": "default-vcpkg",
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
-            "description": "Android port: arm64-v8a build with native Vulkan for graphics (DXVK d3d8, no MoltenVK needed), SDL3 for windowing/touch, OpenAL for audio (OpenSL/AAudio backends), FFmpeg (vcpkg) for video. Requires the Android NDK (r26+); export ANDROID_NDK_HOME=<ndk dir>. The game builds as libmain.so, loaded by the SDLActivity shell in android/.",
+            "description": "Android port: arm64-v8a build with native Vulkan for graphics (DXVK d3d8, no MoltenVK needed), SDL3 for windowing/touch, OpenAL for audio (OpenSL/AAudio backends), FFmpeg (vcpkg) for video. Requires the Android NDK (r26+); export ANDROID_NDK_HOME=<ndk dir>. The game builds as libmain.so, loaded by the SDLActivity shell in android/. RTS_GAMEMEMORY_ENABLE is OFF: the engine's custom pool allocator intercepts global operator delete process-wide, and freeing memory that OpenAL/libc++ allocated through the system allocator via that pool corrupts its bookkeeping (same class of bug the ASAN build config disables it for) -- plain malloc/free is used instead.",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
@@ -309,7 +309,8 @@
                 "RTS_BUILD_GENERALS": "OFF",
                 "RTS_BUILD_CORE_TOOLS": "OFF",
                 "RTS_BUILD_ZEROHOUR_TOOLS": "OFF",
-                "RTS_BUILD_ZEROHOUR_EXTRAS": "OFF"
+                "RTS_BUILD_ZEROHOUR_EXTRAS": "OFF",
+                "RTS_GAMEMEMORY_ENABLE": "OFF"
             },
             "environment": {
                 "PKG_CONFIG_PATH": ""

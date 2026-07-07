@@ -1324,8 +1324,20 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	// DXVK's SDL3 WSI calls SDL_SetWindowPosition during fullscreen entry which Wayland rejects.
 	// SDL3 native fullscreen is applied separately after device creation (see W3DDisplay::init).
 	_PresentParameters.Windowed = TRUE;
+	// GeneralsX @bugfix Android port 07/07/2026 The format-selection branch below keys off
+	// the raw `IsWindowed` game setting (default OFF — the game requests fullscreen), which
+	// on Windows matches _PresentParameters.Windowed but on non-Windows platforms is now
+	// forced TRUE above and out of sync with it. Left as `IsWindowed`, a fresh install
+	// (fullscreen default, no Options.ini yet) takes the else-branch's
+	// Find_Color_And_Z_Mode() path below, which has no real adapter-enumeration backing
+	// under DXVK-native on Android and returns D3DFMT_UNKNOWN — CreateDevice then fails
+	// with D3DERR_NOTAVAILABLE and the game never gets past its first frame. Mirror the
+	// _PresentParameters.Windowed forcing here so format selection agrees with what's
+	// actually being requested from the device.
+	const bool useWindowedFormatPath = true;
 	#else
 	_PresentParameters.Windowed = IsWindowed;
+	const bool useWindowedFormatPath = IsWindowed;
 	#endif
 
 	_PresentParameters.EnableAutoDepthStencil = TRUE;				// Driver will attempt to match Z-buffer depth
@@ -1339,13 +1351,24 @@ bool DX8Wrapper::Set_Render_Device(int dev, int width, int height, int bits, int
 	** - if in windowed mode, the backbuffer must use the current display format.
 	** - the depth buffer must use
 	*/
-	if (IsWindowed) {
+	if (useWindowedFormatPath) {
 
 		D3DDISPLAYMODE desktop_mode;
 		::ZeroMemory(&desktop_mode, sizeof(D3DDISPLAYMODE));
 		D3DInterface->GetAdapterDisplayMode( CurRenderDevice, &desktop_mode );
 
 		DisplayFormat=_PresentParameters.BackBufferFormat = desktop_mode.Format;
+
+		#ifndef _WIN32
+		// GeneralsX @bugfix Android port 07/07/2026 DXVK-native's GetAdapterDisplayMode has no
+		// real desktop mode to report and returns D3DFMT_UNKNOWN here (confirmed: this is what
+		// stopped device creation on Android). Windows keeps the strict below-switch bail-out
+		// unchanged; non-Windows falls back to the universally-supported 32-bit format instead
+		// of failing Set_Render_Device outright.
+		if (_PresentParameters.BackBufferFormat == D3DFMT_UNKNOWN) {
+			DisplayFormat = _PresentParameters.BackBufferFormat = D3DFMT_X8R8G8B8;
+		}
+		#endif
 
 		// In windowed mode, define the bitdepth from desktop mode (as it can't be changed)
 		switch (_PresentParameters.BackBufferFormat) {

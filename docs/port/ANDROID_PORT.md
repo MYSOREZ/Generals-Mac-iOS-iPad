@@ -1,12 +1,27 @@
 # Zero Hour on Android — Port Guide
 
-**Status: first full implementation pass, awaiting on-device bring-up.** All
-code, build system, packaging, the app shell, and a GitHub Actions CI build
-(§3, Option A) are in place (July 2026); none of it has yet been run end to
-end against a real device, so expect the usual cross-compile debugging round
-once a build is produced. The verification checklist at the bottom is the
-work plan for that bring-up — it mirrors how the iOS port (see
-[`PORTING_PLAYBOOK.md`](PORTING_PLAYBOOK.md)) was landed and hardened.
+**Status: CI produces a real, installable APK.** GitHub Actions (§3, Option A)
+builds and links the full engine, compiles DXVK's d3d8/d3d9 for Android, and
+packages a signed APK — first achieved 07/07/2026. A device install then
+surfaced two real runtime bugs (missing `libgamespy.so`, a D3D device-creation
+crash on fresh installs — see §6) that are now fixed in source; the
+verification checklist at the bottom is the remaining on-device bring-up work,
+mirroring how the iOS port (see [`PORTING_PLAYBOOK.md`](PORTING_PLAYBOOK.md))
+was hardened.
+
+**Related community work, worth tracking:**
+- [tarek369/GeneralsZH-Android](https://github.com/tarek369/GeneralsZH-Android)
+  — an independent Android port of the same GeneralsX lineage (same DXVK
+  D3D8→Vulkan approach, same directory layout, same `package-android-zh.sh`
+  naming). Its [`android.md`](https://github.com/tarek369/GeneralsZH-Android/blob/main/android.md)
+  engineering log is where the D3D format-selection bug in §6 was traced from;
+  worth re-checking for new findings as their v0.1-android alpha matures.
+- [p0ls3r/GenLauncher](https://github.com/p0ls3r/GenLauncher) — a Windows-only
+  C# mod-management launcher for Generals/Zero Hour (symlink-based mod
+  isolation, not portable to Android's sandboxed storage model as-is). Not
+  integrated; a from-scratch Android launcher activity (mod list, GameData
+  picker, "verify install" diagnostics) inspired by its UX is a plausible
+  future addition, not a port of the C# code itself.
 
 ---
 
@@ -224,6 +239,73 @@ In dependency order; each gate isolates a failure class (the iOS port's ladder,
     code, also expected to hold).
 
 ## 6. Known gaps / next steps
+
+### Fixed from real-device testing (07/07/2026)
+
+- **`libgamespy.so` missing from the APK → `dlopen` crash on launch.**
+  GamespySDK's own `CMakeLists.txt` does
+  `set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})` — and
+  `CMAKE_BINARY_DIR` names the *outermost* project's build dir even from
+  inside a FetchContent'd subproject, so the library lands directly at
+  `${BUILD_DIR}/libgamespy.so`, not under `_deps/gamespy-build/` like every
+  other FetchContent output in this tree. `package-android-zh.sh` now looks
+  there, and every SDL3_image/openal/gamespy library is a hard packaging
+  failure instead of a warning. CI additionally verifies, via
+  `llvm-readelf -d`, that every non-system `DT_NEEDED` of `libmain.so` is
+  actually present in the built APK — the general form of this check, so the
+  next missing library fails CI instead of shipping.
+- **D3D device creation fails on a fresh install (`D3DERR_NOTAVAILABLE`).**
+  `dx8wrapper.cpp` forces `_PresentParameters.Windowed = TRUE` on all
+  non-Windows platforms (an existing Linux/Wayland fix), but the *format
+  selection* branch a few lines below still keyed off the raw `IsWindowed`
+  game setting — which defaults to `false` (fullscreen) with no `Options.ini`
+  yet. That took the `else` branch's `Find_Color_And_Z_Mode()`, which has no
+  real adapter enumeration under DXVK-native and returns `D3DFMT_UNKNOWN`,
+  and `CreateDevice` refuses the mismatched result. Fixed by making the
+  format-selection branch agree with the same platform reality
+  (`useWindowedFormatPath`), plus a `D3DFMT_X8R8G8B8` fallback (Windows-only
+  behavior unchanged) when `GetAdapterDisplayMode` itself reports
+  `D3DFMT_UNKNOWN`. Traced from
+  [tarek369/GeneralsZH-Android](https://github.com/tarek369/GeneralsZH-Android)'s
+  engineering log, then independently confirmed against our own
+  `dx8wrapper.cpp`.
+- **`RTS_GAMEMEMORY_ENABLE=OFF` on the `android-vulkan` preset.** The engine's
+  custom pool allocator intercepts global `operator delete` process-wide;
+  freeing memory that OpenAL or libc++ containers allocated through the
+  *system* allocator via that pool corrupts its bookkeeping. This is the same
+  class of conflict the ASAN build config already disables the pool for —
+  applied preemptively here rather than waiting for the heap-corruption crash
+  tarek369's log describes hitting.
+
+### Investigated, not changed
+
+- **Archive-override priority (`ArchiveFileSystem::loadIntoDirectoryTree`)**:
+  tarek369's log describes a `std::multimap` insertion-order bug causing most
+  Zero Hour locomotors to be shadowed by base-Generals ones. Independent
+  review of our copy: `dirInfo->m_files.insert(fileIt, ...)` with
+  `fileIt = m_files.find(token)` is the standard, correct idiom for
+  "insert immediately before the first existing entry of this key" in a
+  multimap — the C++ standard guarantees O(1) insertion exactly there when the
+  hint is valid for that position, which `find(token)` always is here. No
+  reproduction on our tree; **flagged for verification during real gameplay
+  testing** (compare Zero Hour unit movement/locomotor behavior against
+  retail) rather than patched speculatively — this code runs identically on
+  every platform this project ships, so a wrong fix here would be a silent,
+  wide-blast-radius regression.
+- **FFmpeg on Android**: tarek369's log states vcpkg's arm64-android FFmpeg
+  port was broken for them and they stubbed it out
+  (`RTS_BUILD_OPTION_FFMPEG=OFF`). Our own CI has FFmpeg **on** and links
+  successfully against the pinned vcpkg commit (`VCPKG_COMMIT` in
+  `build-android.yml`) — contradicts their finding, likely a difference in
+  vcpkg version. Left enabled; watch cutscene playback specifically during
+  device testing since that's the one path that would surface a silently
+  broken decode.
+- **Fresh-install language/registry fallback**: tarek369's log describes a
+  crash in a `LanguageRegistry::init()`-equivalent when no `Options.ini`
+  exists yet. No class by that name exists in our tree (different fork
+  lineage); `registryini.cpp`'s `GetStringFromRegistry` already reads through
+  an INI-based compat shim rather than a real registry, which should degrade
+  gracefully, but this is unverified without a fresh-install device test.
 
 - **Gradle wrapper is not committed** (binary jar). Use a system Gradle 8.x or
   open `android/` once in Android Studio to generate it.
