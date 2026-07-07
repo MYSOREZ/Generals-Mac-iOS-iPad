@@ -54,3 +54,50 @@ index 9975cda..f29ca37 100644
  #else
          "libSDL3.so.0"
  #endif
+diff --git a/src/dxvk/dxvk_sparse.cpp b/src/dxvk/dxvk_sparse.cpp
+index 8c469f2..cbc30a0 100644
+--- a/src/dxvk/dxvk_sparse.cpp
++++ b/src/dxvk/dxvk_sparse.cpp
+@@ -127,8 +127,28 @@ namespace dxvk {
+       std::vector<Rc<DxvkResourceAllocation>> newPages;
+       newPages.reserve(pageCount - m_pageCount);
+ 
+-      for (size_t i = 0; i < pageCount - m_pageCount; i++)
+-        newPages.push_back(m_memory->createSparsePage());
++      for (size_t i = 0; i < pageCount - m_pageCount; i++) {
++        Rc<DxvkResourceAllocation> page = m_memory->createSparsePage();
++
++        // TheSuperHackers @bugfix createSparsePage() legitimately returns
++        // null when no memory type supports sparse residency (observed on
++        // Android GPUs/drivers reporting a zero memory-type mask for sparse
++        // resources). This used to push the null Rc anyway and then
++        // unconditionally dereference every entry below (both in the sort
++        // comparator and via acquirePage() indexing up to the requested
++        // pageCount), segfaulting the first time sparse page capacity had
++        // to grow on such a device. Stop growing early instead: capping
++        // capacity below what was requested is recoverable, a null-page
++        // dereference is not.
++        if (page == nullptr) {
++          Logger::err("DxvkSparsePageAllocator::setCapacity: Failed to allocate a sparse page "
++            "(no memory type supports sparse residency on this device?); capping capacity below "
++            "the requested page count");
++          break;
++        }
++
++        newPages.push_back(std::move(page));
++      }
+ 
+       // Sort page by memory and offset to enable more
+       // batching opportunities during page table updates
+@@ -144,6 +164,11 @@ namespace dxvk {
+           return aHandle.offset < bHandle.offset;
+         });
+ 
++      // Reflect however many pages we actually got, not the requested
++      // count, so m_pageCount never claims more valid entries than
++      // m_pages actually holds (acquirePage() bounds-checks against it).
++      pageCount = uint32_t(m_pages.size() + newPages.size());
++
+       for (auto& page : newPages)
+         m_pages.push_back(std::move(page));
+     }
