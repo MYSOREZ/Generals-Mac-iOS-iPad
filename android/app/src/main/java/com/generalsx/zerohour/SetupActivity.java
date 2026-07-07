@@ -112,6 +112,8 @@ public class SetupActivity extends Activity {
         addButton(root, "Launch Game", this::onLaunchGame);
         addButton(root, "Clear Game Folder Setting", this::onClearGameFolder);
 
+        buildUiScaleSection(root);
+
         TextView help = new TextView(this);
         help.setPadding(0, dp(24), 0, 0);
         help.setText(
@@ -129,6 +131,143 @@ public class SetupActivity extends Activity {
             + "4. \"Launch Game\" starts the game with the folder you picked."
         );
         root.addView(help);
+    }
+
+    // TheSuperHackers @feature Android port 07/07/2026 Menu text size scaling
+    // (GlobalLanguage::adjustFontSize()) has no in-game slider yet -- the
+    // Options screen lives in the user's own game data (.wnd layout), not in
+    // this engine source tree, so a real in-game control can't be added from
+    // here. Expose the same "ResolutionFontAdjustment" percentage here
+    // instead, writing straight into the Options.ini this Android build
+    // actually reads (see SDL3Main.cpp: HOME=<internal storage>, so the file
+    // is <filesDir>/.local/share/GeneralsX/GeneralsZH/Options.ini) -- no need
+    // to wait for the game to visit its own Options menu first.
+    private android.widget.SeekBar uiScaleSeekBar;
+    private TextView uiScaleLabel;
+
+    private void buildUiScaleSection(LinearLayout root) {
+        TextView header = new TextView(this);
+        header.setText("Menu Text Size");
+        header.setTextSize(16);
+        header.setPadding(0, dp(8), 0, dp(4));
+        root.addView(header);
+
+        uiScaleLabel = new TextView(this);
+        root.addView(uiScaleLabel);
+
+        uiScaleSeekBar = new android.widget.SeekBar(this);
+        uiScaleSeekBar.setMax(150);
+        uiScaleSeekBar.setProgress(readUiScalePercent());
+        updateUiScaleLabel(uiScaleSeekBar.getProgress());
+        uiScaleSeekBar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
+                updateUiScaleLabel(progress);
+            }
+            @Override
+            public void onStartTrackingTouch(android.widget.SeekBar seekBar) { }
+            @Override
+            public void onStopTrackingTouch(android.widget.SeekBar seekBar) { }
+        });
+        root.addView(uiScaleSeekBar);
+
+        addButton(root, "Apply Menu Text Size", () -> {
+            writeUiScalePercent(uiScaleSeekBar.getProgress());
+            Toast.makeText(this, "Saved. Takes effect next time you launch the game.", Toast.LENGTH_LONG).show();
+        });
+
+        TextView uiScaleHelp = new TextView(this);
+        uiScaleHelp.setPadding(0, 0, 0, dp(8));
+        uiScaleHelp.setText(
+            "Scales most menu button/label text for the screen resolution. 70 is "
+            + "the game's own default; higher values make menu text bigger. Takes "
+            + "effect the next time you launch the game, not live."
+        );
+        root.addView(uiScaleHelp);
+    }
+
+    private void updateUiScaleLabel(int percent) {
+        uiScaleLabel.setText("Scale: " + percent + "%");
+    }
+
+    private File optionsIniFile() {
+        return new File(getFilesDir(), ".local/share/GeneralsX/GeneralsZH/Options.ini");
+    }
+
+    private File defaultOptionsIniFile() {
+        String gamePath = getSavedGamePath();
+        return gamePath != null ? new File(gamePath, "DefaultOptions.ini") : null;
+    }
+
+    private int readUiScalePercent() {
+        java.util.Map<String, String> prefs = readKeyValueFile(optionsIniFile());
+        String val = prefs.get("ResolutionFontAdjustment");
+        if (val != null) {
+            try {
+                return Math.max(0, Math.min(150, Integer.parseInt(val.trim())));
+            } catch (NumberFormatException ignored) {
+                // Fall through to the engine's own default below.
+            }
+        }
+        return 70;
+    }
+
+    private void writeUiScalePercent(int percent) {
+        File file = optionsIniFile();
+
+        // TheSuperHackers @bugfix Android port 07/07/2026 SDL3Main.cpp only
+        // seeds Options.ini from the game folder's DefaultOptions.ini (full
+        // GPU-detail defaults) the FIRST time it doesn't already exist. If we
+        // create a bare Options.ini containing only ResolutionFontAdjustment
+        // before the user ever launches the game once, that seeding is
+        // permanently skipped and they silently lose those defaults. Seed
+        // from DefaultOptions.ini ourselves first when the file is new.
+        java.util.LinkedHashMap<String, String> prefs;
+        if (!file.isFile()) {
+            prefs = new java.util.LinkedHashMap<>(readKeyValueFile(defaultOptionsIniFile()));
+        } else {
+            prefs = new java.util.LinkedHashMap<>(readKeyValueFile(file));
+        }
+        prefs.put("ResolutionFontAdjustment", String.valueOf(percent));
+
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            Toast.makeText(this, "Could not create Options.ini folder", Toast.LENGTH_LONG).show();
+            return;
+        }
+        try (java.io.PrintWriter w = new java.io.PrintWriter(new java.io.FileWriter(file, false))) {
+            for (java.util.Map.Entry<String, String> e : prefs.entrySet()) {
+                w.print(e.getKey());
+                w.print(" = ");
+                w.print(e.getValue());
+                w.print('\n');
+            }
+        } catch (java.io.IOException e) {
+            Toast.makeText(this, "Could not save Options.ini: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    // Matches UserPreferences::load()'s own format exactly ("key = value"
+    // lines) so a file the engine already wrote round-trips untouched.
+    private static java.util.Map<String, String> readKeyValueFile(File file) {
+        java.util.LinkedHashMap<String, String> result = new java.util.LinkedHashMap<>();
+        if (file == null || !file.isFile()) {
+            return result;
+        }
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader(file))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                int eq = line.indexOf('=');
+                if (eq < 0) continue;
+                String key = line.substring(0, eq).trim();
+                String val = line.substring(eq + 1).trim();
+                if (key.isEmpty() || val.isEmpty()) continue;
+                result.put(key, val);
+            }
+        } catch (java.io.IOException ignored) {
+            // Treat as empty; caller falls back to defaults.
+        }
+        return result;
     }
 
     private void addButton(LinearLayout root, String label, Runnable action) {
