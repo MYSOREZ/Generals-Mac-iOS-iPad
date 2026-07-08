@@ -1166,6 +1166,12 @@ if(NOT SAGE_USE_DX8 AND dxvk_SOURCE_DIR)
     )
 endif()
 
+# Debug.cpp (Core/GameEngine) calls SDL_ShowSimpleMessageBox() on non-Windows
+# builds, mirroring z_gameenginedevice's existing sdl3lib link below.
+if(SAGE_USE_SDL3)
+    target_link_libraries(z_gameengine PUBLIC sdl3lib)
+endif()
+
 target_include_directories(z_gameengine PRIVATE
     Include/Precompiled
 )
