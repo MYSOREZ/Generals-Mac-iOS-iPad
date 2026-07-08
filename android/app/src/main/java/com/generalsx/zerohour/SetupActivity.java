@@ -43,8 +43,8 @@ import android.widget.Toast;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.android.material.slider.Slider;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.io.File;
 
@@ -80,7 +80,41 @@ public class SetupActivity extends Activity {
 
         super.onCreate(savedInstanceState);
         setTitle("GeneralsZH Settings");
-        buildUi();
+
+        // GeneralsX @bugfix Android port 08/07/2026 This screen is the ONLY
+        // way to reach "View Logs" without adb, so it must never be the thing
+        // that crashes. Any future Material/theme incompatibility falls back
+        // to a bare-bones plain-widget UI (same actions, no styling) instead
+        // of taking the whole Settings app down with it.
+        try {
+            buildUi();
+        } catch (Throwable t) {
+            buildFallbackUi(t);
+        }
+    }
+
+    private void buildFallbackUi(Throwable failure) {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(20);
+        root.setPadding(pad, pad, pad, pad);
+        setContentView(root);
+
+        TextView warning = new TextView(this);
+        warning.setText("The normal Settings UI failed to load (" + failure + "). "
+            + "Showing a basic fallback so you can still get to your logs/game folder.");
+        warning.setPadding(0, 0, 0, dp(16));
+        root.addView(warning);
+
+        statusText = new TextView(this);
+        statusText.setTextIsSelectable(true);
+        statusText.setPadding(0, 0, 0, dp(24));
+        root.addView(statusText);
+
+        addButton(root, "Select Game Folder", this::onSelectGameFolder);
+        addButton(root, "View Logs", this::onViewLogs);
+        addButton(root, "Launch Game", this::onLaunchGame);
+        addButton(root, "Clear Game Folder Setting", this::onClearGameFolder);
     }
 
     @Override
@@ -242,12 +276,12 @@ public class SetupActivity extends Activity {
     // this fix, Back fell through a scancode-truncation bug and could
     // misfire as an unrelated in-game hotkey combo instead of doing anything
     // sane.
-    private MaterialSwitch backButtonSwitch;
+    private SwitchMaterial backButtonSwitch;
 
     private void buildBackButtonSection(LinearLayout root) {
         LinearLayout content = startCard(root, "Phone Back Button");
 
-        backButtonSwitch = new MaterialSwitch(this);
+        backButtonSwitch = new SwitchMaterial(this);
         backButtonSwitch.setText("Open the in-game pause menu");
         backButtonSwitch.setChecked(readBackButtonOpensMenu());
         content.addView(backButtonSwitch);
