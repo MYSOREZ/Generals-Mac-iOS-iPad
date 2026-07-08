@@ -78,6 +78,14 @@
 #ifndef _WIN32
 #include "thread_compat.h"
 #endif
+// GeneralsX @bugfix Android port 08/07/2026 On non-Windows builds ReleaseCrash()/
+// ReleaseCrashLocalized() only ever wrote to stderr, which nobody can see on
+// Android (no console) - a fatal init error (e.g. a GPU whose Vulkan driver is
+// too old for DXVK) looked exactly like a silent crash. SDL_ShowSimpleMessageBox
+// has a real Android backend (native AlertDialog) and needs no live renderer.
+#if defined(SAGE_USE_SDL3) && !defined(_WIN32)
+#include <SDL3/SDL.h>
+#endif
 
 // Horrible reference, but we really, really need to know if we are windowed.
 extern bool DX8Wrapper_IsWindowed;
@@ -834,6 +842,13 @@ void ReleaseCrash(const char *reason)
 
 #endif
 
+#if defined(SAGE_USE_SDL3) && !defined(_WIN32)
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Technical Difficulties...",
+		"You have encountered a serious error. Serious errors can be caused by many things "
+		"including viruses, overheated hardware and hardware that does not meet the minimum "
+		"specifications for the game.", nullptr);
+#endif
+
 	_exit(1);
 }
 
@@ -881,6 +896,18 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	#else
 	// Linux: Output to stderr (game will crash anyway after this)
 	fprintf(stderr, "FATAL ERROR: %s\n%s\n", prompt.str(), mesg.str());
+	#if defined(SAGE_USE_SDL3)
+	// GeneralsX @bugfix Android port 08/07/2026 stderr is invisible on Android;
+	// show the same message as a native dialog so the user sees WHY the game
+	// closed (e.g. a GPU whose Vulkan driver is too old for DXVK) instead of it
+	// just silently disappearing.
+	{
+		AsciiString promptA, mesgA;
+		promptA.translate(prompt);
+		mesgA.translate(mesg);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, promptA.str(), mesgA.str(), nullptr);
+	}
+	#endif
 	#endif
 
 	char prevbuf[ _MAX_PATH ];
