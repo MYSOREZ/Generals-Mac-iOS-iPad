@@ -699,10 +699,17 @@ void WOLLoginMenuInit( WindowLayout *layout, void *userData )
 		}
 		else
 		{
+			// GeneralsX @bugfix Android port 10/07/2026 GetUserName() (Windows
+			// advapi32) has no portable equivalent wired up -- this whole
+			// ALLOW_NON_PROFILED_LOGIN branch is legacy GameSpy WOL login UI,
+			// unreachable once the Online button is wired to GeneralsOnline;
+			// leaving nick blank here (same as GetUserName failing) is fine.
+#if defined(_WIN32)
 			char userBuf[32] = "";
 			unsigned long bufSize = 32;
 			GetUserName(userBuf, &bufSize);
 			nick.translate(userBuf);
+#endif
 		}
 
 		GadgetTextEntrySetText(textEntryLoginName, nick);

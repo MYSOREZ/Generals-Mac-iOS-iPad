@@ -102,7 +102,15 @@ enum { NOTIFICATION_EXPIRES = 3000 };
 
 void setUnignoreText( WindowLayout *layout, AsciiString nick, GPProfile id);
 void refreshIgnoreList();
-void showNotificationBox( AsciiString nick, UnicodeString message);
+// GeneralsX @bugfix Android port 10/07/2026 GeneralsOnline's own module
+// (NextGenMP_defines.h) also declares showNotificationBox with a 3rd,
+// defaulted bPlaySound param -- this used to be a 2-arg-only overload here,
+// which made every 2-arg call in the engine genuinely ambiguous (could bind
+// either the local 2-arg function or the 3-arg one via its default). Adding
+// the same optional param here instead of removing NextGenMP_defines.h's
+// declaration keeps GeneralsOnline's own explicit 3-arg call sites working
+// too (OnlineServices_SocialInterface.cpp etc).
+void showNotificationBox( AsciiString nick, UnicodeString message, bool bPlaySound = true);
 void deleteNotificationBox();
 static Bool lastNotificationWasStatus = FALSE;
 static Int numOnlineInNotification = 0;
@@ -646,7 +654,7 @@ void HandleBuddyResponses()
 	}
 }
 
-void showNotificationBox( AsciiString nick, UnicodeString message)
+void showNotificationBox( AsciiString nick, UnicodeString message, bool bPlaySound)
 {
 //	if(!GameSpyIsOverlayOpen(GSOVERLAY_BUDDY))
 //		return;
@@ -678,7 +686,7 @@ void showNotificationBox( AsciiString nick, UnicodeString message)
 
 	AudioEventRTS buttonClick("GUICommunicatorIncoming");
 
-	if( TheAudio )
+	if( TheAudio && bPlaySound )
 	{
 		TheAudio->addAudioEvent( &buttonClick );
 	}
