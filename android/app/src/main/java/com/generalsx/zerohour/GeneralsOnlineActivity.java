@@ -65,7 +65,13 @@ import java.security.SecureRandom;
 public class GeneralsOnlineActivity extends Activity {
 
     private static final String API_BASE = "https://api.playgenerals.online/env/prod/contract/1/";
-    private static final String LOGIN_URL_FMT = "https://www.playgenerals.online/login/?gamecode=%s";
+    // GeneralsX @bugfix Android port 10/07/2026 the reference client
+    // (OnlineServices_Auth.cpp BeginLogin) always appends &client=<id> to
+    // this URL -- without it the site apparently doesn't reliably associate
+    // the code with a pending login (the site says "return to the game" but
+    // CheckLogin never resolves it, so the launcher sits on "Not signed in"
+    // with a network-error toast until POLL_MAX_ATTEMPTS gives up).
+    private static final String LOGIN_URL_FMT = "https://www.playgenerals.online/login/?gamecode=%s&client=%s";
     private static final String CLIENT_ID = "custom_third_party_client";
 
     private static final String PREFS_NAME = "generalsonline_session";
@@ -234,7 +240,7 @@ public class GeneralsOnlineActivity extends Activity {
         signInButton.setEnabled(false);
 
         String code = generateGameCode();
-        String url = String.format(LOGIN_URL_FMT, code);
+        String url = String.format(LOGIN_URL_FMT, code, CLIENT_ID);
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (Exception e) {

@@ -65,7 +65,10 @@ private:
 private:
 	CURL* m_pCURL = nullptr;
 
-	int m_responseCode = -1;
+	// GeneralsX @bugfix Android port 10/07/2026 CURLINFO_RESPONSE_CODE needs
+	// a long*, not int* -- see OnlineServices_RoomsInterface.cpp for the
+	// same fix and the full explanation (LP64 stack/member corruption).
+	long m_responseCode = -1;
 
 	EHTTPVerb m_httpVerb;
 

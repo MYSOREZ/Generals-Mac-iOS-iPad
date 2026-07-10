@@ -72,7 +72,16 @@ void WebSocket::Connect(const char* url, bool bIsReconnect, std::function<void(v
 	{
 		m_fnWebsocketConnectedCallback = fnWebsocketConnectedCallback;
 
-		int httpResponseCode = -1;
+		// GeneralsX @bugfix Android port 10/07/2026 CURLINFO_RESPONSE_CODE
+		// requires a `long*` per libcurl's docs, not `int*` -- on LP64
+		// platforms (Android arm64, unlike Windows LLP64 where long==int)
+		// curl writes a full 8-byte long through this pointer, overflowing
+		// a 4-byte int's stack storage by 4 bytes. Concrete, deterministic
+		// stack corruption on the very first curl call in this whole
+		// module's connect path -- the actual cause of the Online-button
+		// crash. Same fix applied to the other two int/long curl mismatches
+		// this module had (Tick() below, HTTPRequest.cpp's m_responseCode).
+		long httpResponseCode = -1;
 		m_strWebsocketAddr = std::string(url);
 		curl_easy_setopt(m_pCurlWS, CURLOPT_URL, url);
 
@@ -81,7 +90,7 @@ void WebSocket::Connect(const char* url, bool bIsReconnect, std::function<void(v
 		curl_easy_setopt(m_pCurlWS, CURLOPT_CONNECT_ONLY, 2L); /* websocket style */
 
         // HTTP v1 seems to have a higher success rate of bypassing DPI
-		curl_easy_setopt(m_pCurlWS, CURLOPT_HTTP_VERSION, NGMP_OnlineServicesManager::Settings.Network_GetHTTPVersionForCurl());
+		curl_easy_setopt(m_pCurlWS, CURLOPT_HTTP_VERSION, (long)NGMP_OnlineServicesManager::Settings.Network_GetHTTPVersionForCurl());
 
 #if _DEBUG
 		curl_easy_setopt(m_pCurlWS, CURLOPT_SSL_VERIFYPEER, 0);
@@ -457,7 +466,9 @@ void WebSocket::Tick()
 
                 if (pCurlHandle == m_pCurlWS) // shouldnt hear about anything else
                 {
-					int httpResponseCode = -1;
+					// GeneralsX @bugfix Android port 10/07/2026 see Connect() above --
+					// CURLINFO_RESPONSE_CODE needs a long*, not int*.
+					long httpResponseCode = -1;
 					curl_easy_getinfo(pCurlHandle, CURLINFO_RESPONSE_CODE, &httpResponseCode);
 
 					/* Check for errors */

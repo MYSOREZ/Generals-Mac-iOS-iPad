@@ -175,7 +175,9 @@ void HTTPRequest::Threaded_SetComplete(CURLcode result)
 	}
 #endif
 
-	NetworkLog(ELogVerbosity::LOG_RELEASE, "[%p|%s|Verb %d] Response was %d - %s!", this, strURIRedacted.c_str(), m_httpVerb, m_responseCode, strResponse.c_str());
+	// GeneralsX @bugfix Android port 10/07/2026 m_responseCode is now a
+	// long (see HTTPRequest.h) -- %ld, not %d.
+	NetworkLog(ELogVerbosity::LOG_RELEASE, "[%p|%s|Verb %d] Response was %ld - %s!", this, strURIRedacted.c_str(), m_httpVerb, m_responseCode, strResponse.c_str());
 
 	// trigger callback
 	InvokeCallbackIfComplete();
@@ -195,10 +197,16 @@ void HTTPRequest::PlatformStartRequest()
 		curl_easy_setopt(m_pCURL, CURLOPT_USERAGENT, "GeneralsOnline Client");
 
 		
-		curl_easy_setopt(m_pCURL, CURLOPT_CONNECTTIMEOUT_MS, m_timeoutMS);
-		curl_easy_setopt(m_pCURL, CURLOPT_TIMEOUT_MS, m_timeoutMS);
+		// GeneralsX @bugfix Android port 10/07/2026 these curl options are all
+		// documented as taking a `long` -- m_timeoutMS/Network_GetHTTPVersionForCurl()
+		// are `int`, an implicit-conversion mismatch in a variadic call
+		// (undefined behavior per C's varargs rules; the getinfo half of this
+		// same mistake was the actual Online-button crash, see Connect() in
+		// OnlineServices_RoomsInterface.cpp for the full explanation).
+		curl_easy_setopt(m_pCURL, CURLOPT_CONNECTTIMEOUT_MS, (long)m_timeoutMS);
+		curl_easy_setopt(m_pCURL, CURLOPT_TIMEOUT_MS, (long)m_timeoutMS);
 
-		curl_easy_setopt(m_pCURL, CURLOPT_HTTP_VERSION, NGMP_OnlineServicesManager::Settings.Network_GetHTTPVersionForCurl());
+		curl_easy_setopt(m_pCURL, CURLOPT_HTTP_VERSION, (long)NGMP_OnlineServicesManager::Settings.Network_GetHTTPVersionForCurl());
 
 		if (m_protover == EIPProtocolVersion::DONT_CARE)
 		{
@@ -252,7 +260,7 @@ void HTTPRequest::PlatformStartRequest()
 		if (pHTTPManager->IsProxyEnabled())
 		{
 			curl_easy_setopt(m_pCURL, CURLOPT_PROXY, pHTTPManager->GetProxyAddress().c_str());
-			curl_easy_setopt(m_pCURL, CURLOPT_PROXYPORT, pHTTPManager->GetProxyPort());
+			curl_easy_setopt(m_pCURL, CURLOPT_PROXYPORT, (long)pHTTPManager->GetProxyPort());
 		}
 
 		curl_easy_setopt(m_pCURL, CURLOPT_SSL_VERIFYPEER, 0);
