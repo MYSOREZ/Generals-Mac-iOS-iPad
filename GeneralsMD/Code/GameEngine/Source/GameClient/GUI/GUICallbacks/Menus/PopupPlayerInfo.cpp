@@ -239,16 +239,28 @@ void GetAdditionalDisconnectsFromUserFile(PSPlayerStats *stats)
 // default values
 RankPoints::RankPoints()
 {
+	// GeneralsX @bugfix Android port 10/07/2026 TheGameSpyConfig is only
+	// constructed by the legacy GameSpy setup chain (PeerDefs.cpp's
+	// SetUpGameSpy(), invoked from the old dead-server startOnline() path) --
+	// GeneralsOnline's NGMP_OnlineServices_StatsInterface constructs a
+	// RankPoints too (`NEW RankPoints` in OnlineServices_StatsInterface.cpp),
+	// and TryStartGeneralsOnline() skips SetUpGameSpy() entirely, so
+	// TheGameSpyConfig is still null there. This was a real, deterministic
+	// null-pointer crash (fault_addr=0x0) on every "Online" press once a
+	// session existed -- confirmed via addr2line against the actual crashing
+	// build. Falling back to the same hardcoded values the comments already
+	// documented (and that upstream's own GameSpy config .ini normally
+	// resolves to) when TheGameSpyConfig isn't available yet.
 	m_ranks[RANK_PRIVATE]							= 0;
-	m_ranks[RANK_CORPORAL]						= TheGameSpyConfig->getPointsForRank(RANK_CORPORAL); // 5
-	m_ranks[RANK_SERGEANT]						= TheGameSpyConfig->getPointsForRank(RANK_SERGEANT); // 10
-	m_ranks[RANK_LIEUTENANT]					= TheGameSpyConfig->getPointsForRank(RANK_LIEUTENANT); // 20
-	m_ranks[RANK_CAPTAIN]							= TheGameSpyConfig->getPointsForRank(RANK_CAPTAIN); // 50
-	m_ranks[RANK_MAJOR]								= TheGameSpyConfig->getPointsForRank(RANK_MAJOR); // 100
-	m_ranks[RANK_COLONEL]							= TheGameSpyConfig->getPointsForRank(RANK_COLONEL); // 200
-	m_ranks[RANK_BRIGADIER_GENERAL]		= TheGameSpyConfig->getPointsForRank(RANK_BRIGADIER_GENERAL); // 500
-	m_ranks[RANK_GENERAL]							= TheGameSpyConfig->getPointsForRank(RANK_GENERAL); // 1000
-	m_ranks[RANK_COMMANDER_IN_CHIEF]	= TheGameSpyConfig->getPointsForRank(RANK_COMMANDER_IN_CHIEF); // 2000
+	m_ranks[RANK_CORPORAL]						= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_CORPORAL) : 5;
+	m_ranks[RANK_SERGEANT]						= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_SERGEANT) : 10;
+	m_ranks[RANK_LIEUTENANT]					= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_LIEUTENANT) : 20;
+	m_ranks[RANK_CAPTAIN]							= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_CAPTAIN) : 50;
+	m_ranks[RANK_MAJOR]								= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_MAJOR) : 100;
+	m_ranks[RANK_COLONEL]							= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_COLONEL) : 200;
+	m_ranks[RANK_BRIGADIER_GENERAL]		= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_BRIGADIER_GENERAL) : 500;
+	m_ranks[RANK_GENERAL]							= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_GENERAL) : 1000;
+	m_ranks[RANK_COMMANDER_IN_CHIEF]	= TheGameSpyConfig ? TheGameSpyConfig->getPointsForRank(RANK_COMMANDER_IN_CHIEF) : 2000;
 
 	m_winMultiplier = 3.0f;
 	m_lostMultiplier = 0.0f;

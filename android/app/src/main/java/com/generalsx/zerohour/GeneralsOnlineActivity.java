@@ -146,7 +146,9 @@ public class GeneralsOnlineActivity extends Activity {
         LinearLayout stepsCard = startCard(root, "Sign in");
         TextView help = new TextView(this);
         help.setText(
-            "Tap Sign In -- a browser opens to playgenerals.online, already carrying a "
+            "Tap Sign In. The first tap may ask to exempt this app from battery "
+            + "optimization -- allow it, then come back and tap Sign In again. "
+            + "A browser then opens to playgenerals.online, already carrying a "
             + "one-time code for this device. Pick Steam, Discord, or GameReplays there, "
             + "then just come back to this app; it finishes on its own."
         );
@@ -231,8 +233,38 @@ public class GeneralsOnlineActivity extends Activity {
         }).start();
     }
 
+    // GeneralsX @bugfix Android port 10/07/2026 the sign-in flow backgrounds
+    // this Activity for the whole browser round-trip; without a battery
+    // exemption, some OEM battery managers throttle the poll timer hard
+    // enough that CheckLogin never actually runs, so a login that visibly
+    // succeeded on the website never completes here. First tap requests the
+    // exemption (and stops there -- no browser yet); once granted (or if it
+    // already was), the next tap proceeds with the real sign-in.
+    private boolean ensureNotBatteryOptimized() {
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(POWER_SERVICE);
+        if (pm != null && pm.isIgnoringBatteryOptimizations(getPackageName())) {
+            return true;
+        }
+        try {
+            Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Exception e) {
+            // Some OEMs don't support this action; fall through and let sign-in
+            // proceed anyway rather than blocking the user entirely.
+            return true;
+        }
+        statusText.setText("Allow GeneralsZH to run in the background on the next screen, "
+            + "then come back and tap Sign In again -- otherwise Android may kill the "
+            + "sign-in check while you're in the browser.");
+        return false;
+    }
+
     private void onSignIn() {
         if (busy) {
+            return;
+        }
+        if (!ensureNotBatteryOptimized()) {
             return;
         }
         busy = true;

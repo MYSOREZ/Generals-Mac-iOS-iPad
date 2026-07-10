@@ -252,7 +252,13 @@ LadderList::LadderList()
 {
 	//Int profile = TheGameSpyInfo->getLocalProfileID();
 
-	AsciiString rawMotd = TheGameSpyConfig->getLeftoverConfig();
+	// GeneralsX @bugfix Android port 10/07/2026 same class of bug as
+	// RankPoints::RankPoints() (PopupPlayerInfo.cpp) -- TheGameSpyConfig is
+	// only set up by the legacy GameSpy path, which GeneralsOnline's flow
+	// skips entirely. Empty rawMotd just means the loop below parses no
+	// ladders (loadLocalLadders() below still runs) instead of null-deref
+	// crashing.
+	AsciiString rawMotd = TheGameSpyConfig ? TheGameSpyConfig->getLeftoverConfig() : AsciiString::TheEmptyString;
 	AsciiString line;
 	Bool inLadders = FALSE;
 	Bool inSpecialLadders = FALSE;
