@@ -120,6 +120,7 @@ public class SetupActivity extends Activity {
     protected void onResume() {
         super.onResume();
         refreshStatus();
+        refreshGeneralsOnlineStatus();
     }
 
     // GeneralsX @feature Android port 08/07/2026 Material redesign: each
@@ -161,6 +162,7 @@ public class SetupActivity extends Activity {
 
         buildUiScaleSection(root);
         buildCustomDriverSection(root);
+        buildGeneralsOnlineSection(root);
 
         LinearLayout helpCard = startCard(root, "How this works");
         TextView help = new TextView(this);
@@ -493,6 +495,31 @@ public class SetupActivity extends Activity {
         } catch (java.io.IOException e) {
             return null;
         }
+    }
+
+    // GeneralsX @feature Android port 10/07/2026 GeneralsOnline (playgenerals.online)
+    // account status -- the actual sign-in flow lives in GeneralsOnlineActivity,
+    // this is just a status line + entry point.
+    private TextView onlineStatusView;
+
+    private void buildGeneralsOnlineSection(LinearLayout root) {
+        LinearLayout content = startCard(root, "Online Multiplayer");
+
+        onlineStatusView = new TextView(this);
+        content.addView(onlineStatusView);
+
+        addButton(content, "GeneralsOnline Account", () ->
+            startActivity(new Intent(this, GeneralsOnlineActivity.class)));
+    }
+
+    private void refreshGeneralsOnlineStatus() {
+        if (onlineStatusView == null) {
+            return;
+        }
+        String displayName = GeneralsOnlineActivity.getSignedInDisplayName(this);
+        onlineStatusView.setText(displayName != null
+            ? "Signed in as " + displayName + "."
+            : "Not signed in -- required for online matches.");
     }
 
     private File optionsIniFile() {

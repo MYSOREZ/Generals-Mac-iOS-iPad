@@ -25,6 +25,12 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
+    <!-- GeneralsX @feature Android port 10/07/2026 GeneralsOnline account
+         login (GeneralsOnlineActivity) and, eventually, the native
+         multiplayer client both need plain outbound HTTPS/WebSocket. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -89,6 +95,13 @@
             android:name=".LogViewerActivity"
             android:exported="false"
             android:theme="@style/Theme.GeneralsZHSettings"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <activity
+            android:name=".GeneralsOnlineActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GeneralsZHSettings"
+            android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize|keyboardHidden" />
     </application>
 </manifest>
