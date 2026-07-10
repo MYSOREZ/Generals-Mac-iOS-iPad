@@ -105,6 +105,10 @@
 #include "GameNetwork/WOLBrowser/WebBrowser.h"
 #include "GameNetwork/LANAPI.h"
 #include "GameNetwork/GameSpy/GameResultsThread.h"
+// GeneralsX @feature Android port 10/07/2026 GeneralsOnline's HTTPManager/
+// WebSocket need pumping once a frame, same as TheNetwork below, or nothing
+// they kick off (auth polling, WS connect, HTTP requests) ever progresses.
+#include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
 
 #include "Common/version.h"
 
@@ -975,6 +979,11 @@ void GameEngine::update()
 			if (TheNetwork != nullptr)
 			{
 				TheNetwork->UPDATE();
+			}
+
+			if (NGMP_OnlineServicesManager::GetInstance() != nullptr)
+			{
+				NGMP_OnlineServicesManager::GetInstance()->Tick();
 			}
 		}
 

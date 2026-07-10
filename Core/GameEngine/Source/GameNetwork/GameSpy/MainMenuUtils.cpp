@@ -55,6 +55,16 @@
 #include "WWDownload/Registry.h"
 #include "WWDownload/urlBuilder.h"
 
+// GeneralsX @feature Android port 10/07/2026 GeneralsOnline is a Zero
+// Hour-only feature (this file is shared Core/GameEngine, compiled for base
+// Generals too, where NextGenMP_defines.h resolves to an empty stub and
+// leaves GENERALS_ONLINE undefined -- see
+// Generals/Code/GameEngine/Include/GameNetwork/GeneralsOnline/NextGenMP_defines.h).
+#include "GameNetwork/GeneralsOnline/NextGenMP_defines.h"
+#if defined(GENERALS_ONLINE)
+#include "GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.h"
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
@@ -821,6 +831,18 @@ void StopAsyncDNSCheck()
 
 void StartPatchCheck()
 {
+#if defined(GENERALS_ONLINE)
+	// GeneralsX @feature Android port 10/07/2026 the legacy GameSpy path below
+	// is DNS-checking servers EA shut down years ago -- it can never succeed.
+	// If the Android launcher already has a GeneralsOnline session, skip it
+	// entirely and connect to GeneralsOnline instead. Falls through to the
+	// old (always-fails) path if there's no session yet.
+	if (TryStartGeneralsOnline())
+	{
+		return;
+	}
+#endif
+
 	checkingForPatchBeforeGameSpy = TRUE;
 	cantConnectBeforeOnline = FALSE;
 	timeThroughOnline++;

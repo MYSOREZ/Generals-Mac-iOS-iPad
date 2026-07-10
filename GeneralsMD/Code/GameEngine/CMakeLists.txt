@@ -1123,6 +1123,7 @@ set(GAMEENGINE_SRC
     # not to an actual match. Ported from GeneralsOnlineDevelopmentTeam/SuperHackers_GO
     # (branch go_int, commit 32ae5135), which is upstream TheSuperHackers/GeneralsGameCode
     # plus one GO-integration commit, adapted here for a headless (non-Windows) build.
+    Include/GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.h
     Include/GameNetwork/GeneralsOnline/GeneralsOnline_Settings.h
     Include/GameNetwork/GeneralsOnline/HTTP/HTTPManager.h
     Include/GameNetwork/GeneralsOnline/HTTP/HTTPRequest.h

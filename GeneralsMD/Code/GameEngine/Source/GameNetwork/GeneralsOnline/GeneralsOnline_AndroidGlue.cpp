@@ -9,6 +9,15 @@
 // the rest of the module links.
 
 #include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
+#include "GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.h"
+#include "GameNetwork/GameSpyOverlay.h"
+#include <string>
+
+#if defined(__ANDROID__)
+#include <SDL3/SDL.h>
+#include <cstdio>
+#include <cstring>
+#endif
 
 NGMPGame* TheNGMPGame = nullptr;
 
@@ -24,4 +33,103 @@ void OnKickedFromLobby()
 	// TODO_GO_ANDROID: once a lobby-browser screen exists, this should also
 	// navigate the player back out of it (mirrors upstream's nextScreen +
 	// TheShell->pop() in WOLGameSetupMenu.cpp's OnKickedFromLobby()).
+}
+
+#if defined(__ANDROID__)
+namespace
+{
+	struct AndroidSession
+	{
+		std::string sessionToken;
+		std::string userId;
+		std::string displayName;
+		std::string wsUri;
+	};
+
+	// Mirrors SDL3Main.cpp's gamedata_path.txt reader: the Android launcher
+	// (GeneralsOnlineActivity.java) writes this plain "key=value" marker file
+	// straight into getFilesDir() -- the same directory
+	// SDL_GetAndroidInternalStoragePath() resolves to -- there is no JNI
+	// plumbing involved on either side, just a shared filesystem convention.
+	bool ReadAndroidSession(AndroidSession& outSession)
+	{
+		const char* internalPath = SDL_GetAndroidInternalStoragePath();
+		if (internalPath == nullptr)
+		{
+			return false;
+		}
+
+		char markerPath[1024];
+		snprintf(markerPath, sizeof(markerPath), "%s/generalsonline_session.txt", internalPath);
+		FILE* f = fopen(markerPath, "r");
+		if (f == nullptr)
+		{
+			return false;
+		}
+
+		char line[2048];
+		while (fgets(line, sizeof(line), f) != nullptr)
+		{
+			size_t len = strlen(line);
+			while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r'))
+			{
+				line[--len] = '\0';
+			}
+
+			char* eq = strchr(line, '=');
+			if (eq == nullptr)
+			{
+				continue;
+			}
+			*eq = '\0';
+			const char* key = line;
+			const char* value = eq + 1;
+
+			if (strcmp(key, "session_token") == 0) outSession.sessionToken = value;
+			else if (strcmp(key, "user_id") == 0) outSession.userId = value;
+			else if (strcmp(key, "display_name") == 0) outSession.displayName = value;
+			else if (strcmp(key, "ws_uri") == 0) outSession.wsUri = value;
+		}
+		fclose(f);
+
+		return !outSession.sessionToken.empty() && !outSession.wsUri.empty();
+	}
+}
+#endif // __ANDROID__
+
+bool TryStartGeneralsOnline()
+{
+#if defined(__ANDROID__)
+	AndroidSession session;
+	if (!ReadAndroidSession(session))
+	{
+		// Not signed in yet -- the player needs to use the GeneralsOnline
+		// Account screen in the Settings app first. Fall through to the
+		// legacy path (which will show its own "can't connect" message);
+		// a friendlier prompt here is a follow-up.
+		return false;
+	}
+
+	if (NGMP_OnlineServicesManager::GetInstance() == nullptr)
+	{
+		NGMP_OnlineServicesManager::CreateInstance();
+		NGMP_OnlineServicesManager::GetInstance()->Init();
+	}
+
+	ClearGSMessageBoxes();
+	GSMessageBoxNoButtons(UnicodeString(L"GeneralsOnline"), UnicodeString(L"Connecting..."), false);
+
+	std::string displayName = session.displayName;
+	NGMP_OnlineServicesManager::GetInstance()->OnLogin(ELoginResult::Success, session.wsUri.c_str(), [displayName]()
+		{
+			ClearGSMessageBoxes();
+			UnicodeString msg;
+			msg.format(UnicodeString(L"Connected to GeneralsOnline as %hs.\n\n(Lobby browsing isn't wired up in the game client yet.)"), displayName.c_str());
+			GSMessageBoxOk(UnicodeString(L"GeneralsOnline"), msg, nullptr);
+		});
+
+	return true;
+#else
+	return false;
+#endif
 }
