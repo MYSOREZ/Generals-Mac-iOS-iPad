@@ -7,6 +7,7 @@
 #include "GameNetwork/GeneralsOnline/OnlineServices_Init.h"
 #include "GameNetwork/GeneralsOnline/HTTP/HTTPManager.h"
 #include "GameNetwork/GameSpy/PeerDefs.h"
+#include "GameNetwork/GameSpyOverlay.h"
 
 
 WebSocket::WebSocket()
@@ -515,6 +516,16 @@ void WebSocket::Tick()
                             m_bReconnecting = false;
                             m_numReconnectAttempts = 0;
                             m_lastReconnectAttempt = -1;
+
+                            // GeneralsX @bugfix Android port 10/07/2026 the
+                            // connected-callback no longer fires on failure
+                            // (see above), so without this the "Connecting..."
+                            // box put up by GeneralsOnline_AndroidGlue.cpp
+                            // would just sit there forever with no feedback.
+                            ClearGSMessageBoxes();
+                            UnicodeString msg;
+                            msg.format(UnicodeString(L"Could not connect to GeneralsOnline (%hs)."), curl_easy_strerror(m->data.result));
+                            GSMessageBoxOk(UnicodeString(L"GeneralsOnline"), msg, nullptr);
                         }
                     }
                     else
@@ -539,11 +550,23 @@ void WebSocket::Tick()
 
                         // connecting is as good as a pong
                         m_lastPong = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-                    }
 
-                    if (m_fnWebsocketConnectedCallback != nullptr)
-                    {
-                        m_fnWebsocketConnectedCallback();
+                        // GeneralsX @bugfix Android port 10/07/2026 this used
+                        // to fire unconditionally, even in the m->data.result
+                        // != CURLE_OK branch above -- so a connection that
+                        // actually failed (confirmed via a real device log:
+                        // "[WebSocket] Failed to connect (1 - Unsupported
+                        // protocol)" immediately followed by "Going to
+                        // teardown") still told the caller it succeeded,
+                        // which is what let the game show "Connected to
+                        // GeneralsOnline" and fire GetFriendsList/
+                        // GetBlockList (both then got rejected 401, since
+                        // there was never a real session). Only invoke this
+                        // on the success path now.
+                        if (m_fnWebsocketConnectedCallback != nullptr)
+                        {
+                            m_fnWebsocketConnectedCallback();
+                        }
                     }
                 }
             }

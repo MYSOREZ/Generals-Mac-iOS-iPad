@@ -10,7 +10,9 @@
 
 #include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
 #include "GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.h"
+#include "GameNetwork/GeneralsOnline/OnlineServices_Auth.h"
 #include "GameNetwork/GameSpyOverlay.h"
+#include <cstdlib>
 #include <string>
 
 #if defined(__ANDROID__)
@@ -114,6 +116,20 @@ bool TryStartGeneralsOnline()
 	{
 		NGMP_OnlineServicesManager::CreateInstance();
 		NGMP_OnlineServicesManager::GetInstance()->Init();
+	}
+
+	// GeneralsX @bugfix Android port 10/07/2026 the launcher already exchanged
+	// its device code for a session token before the game even started; that
+	// token was being read from the marker file and then silently discarded
+	// here, so NGMP_OnlineServices_AuthInterface::IsLoggedIn() stayed false
+	// and every authenticated call (GetFriendsList/GetBlockList, fired right
+	// after WS connect below) went out with no Authorization header and got
+	// rejected 401 by the server (confirmed via a real device log).
+	NGMP_OnlineServices_AuthInterface* pAuthInterface = NGMP_OnlineServicesManager::GetInterface<NGMP_OnlineServices_AuthInterface>();
+	if (pAuthInterface != nullptr)
+	{
+		int64_t userID = static_cast<int64_t>(std::strtoll(session.userId.c_str(), nullptr, 10));
+		pAuthInterface->SetExternalSession(session.sessionToken, userID, session.displayName);
 	}
 
 	ClearGSMessageBoxes();

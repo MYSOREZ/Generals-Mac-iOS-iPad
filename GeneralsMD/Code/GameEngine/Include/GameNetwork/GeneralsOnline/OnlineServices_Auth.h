@@ -43,6 +43,22 @@ public:
 		return m_userID != -1 && !m_strToken.empty();
 	}
 
+	// GeneralsX @feature Android port 10/07/2026 the Android launcher
+	// (GeneralsOnlineActivity.java) already ran its own device-code exchange
+	// with playgenerals.online before the game process even starts, so this
+	// module's normal BeginLogin()/OnLoginComplete() device-code flow never
+	// runs on Android -- m_strToken/m_userID/m_strDisplayName would stay at
+	// their unset defaults forever, so every authenticated HTTP/WS call
+	// (GetFriendsList, GetBlockList, ...) sends no Authorization header and
+	// gets rejected with 401. This lets GeneralsOnline_AndroidGlue.cpp feed in
+	// the session the launcher already established.
+	void SetExternalSession(const std::string& strToken, int64_t userID, const std::string& strDisplayName)
+	{
+		m_strToken = strToken;
+		m_userID = userID;
+		m_strDisplayName = strDisplayName;
+	}
+
 	void LogoutOfMyAccount();
 
 private:
