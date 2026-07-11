@@ -53,3 +53,13 @@ enum GameSortType CPP_11(: Int)
 
 Bool HandleSortButton( NameKeyType sortButton );
 void PopulateLobbyPlayerListbox();
+
+// GeneralsX @bugfix Android port 07/11/2026 - ported from upstream GeneralsOnline, needed by WOLLobbyMenu.cpp lobby room-type filter combo box
+enum LobbyGameModeFilter CPP_11(: Int)
+{
+    LOBBY_FILTER_ALL = 0,
+    LOBBY_FILTER_1V1,
+    LOBBY_FILTER_TEAM,
+    LOBBY_FILTER_FFA,
+    LOBBY_FILTER_AOD,
+};

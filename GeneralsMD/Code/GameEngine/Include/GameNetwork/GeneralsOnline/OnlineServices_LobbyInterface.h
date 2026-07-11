@@ -83,7 +83,9 @@ enum class EJoinLobbyResult
 	JoinLobbyResult_Success, // The room was joined.
 	JoinLobbyResult_FullRoom,       // The room is full.
 	JoinLobbyResult_BadPassword,    // An incorrect password (or none) was given for a passworded room.
-	JoinLobbyResult_JoinFailed // Generic failure.
+	JoinLobbyResult_JoinFailed, // Generic failure.
+	// GeneralsX @bugfix Android port 07/11/2026 - ported from upstream GeneralsOnline, used by WOLLobbyMenu.cpp
+	JoinLobbyResult_AnticheatMismatch // Anticheat mismatch
 };
 
 enum class ELobbyJoinability

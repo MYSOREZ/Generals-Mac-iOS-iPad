@@ -194,6 +194,9 @@ static GameWindow *parentGameListLarge = nullptr;
 
 static const Image *pingImages[3] = { nullptr, nullptr, nullptr };
 
+// GeneralsX @bugfix Android port 07/11/2026 - ported from upstream GeneralsOnline, backs WOLLobbyMenu.cpp's lobby room-type filter combo box
+LobbyGameModeFilter theLobbyFilter = LOBBY_FILTER_ALL;
+
 static void gameTooltip(GameWindow *window,
 													WinInstanceData *instData,
 													UnsignedInt mouse)

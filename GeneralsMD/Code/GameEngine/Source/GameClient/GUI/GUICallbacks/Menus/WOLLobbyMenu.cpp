@@ -341,7 +341,8 @@ static void playerTooltip(GameWindow *window,
 	NGMP_OnlineServices_SocialInterface* pSocialInterface = NGMP_OnlineServicesManager::GetInterface<NGMP_OnlineServices_SocialInterface>();
 	if (pRoomsInterface != nullptr && pAuthInterface != nullptr && pStatsInterface != nullptr && pSocialInterface != nullptr)
 	{
-		int profileID = (int)GadgetListBoxGetItemData(listboxLobbyPlayers, row, 0);
+		// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+		int profileID = static_cast<int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(listboxLobbyPlayers, row, 0)));
 		NetworkRoomMember* roomMember = pRoomsInterface->GetRoomMemberFromID(profileID);
 
 		// TODO_NGMP: This is an async call, we should block future popups until it returns to avoid weirdness
@@ -777,7 +778,8 @@ void PopulateLobbyPlayerListbox()
                     }
                     ++numSelected;
 
-                    int profileID = (int)GadgetListBoxGetItemData(listboxLobbyPlayers, selectedIndices[i], 0);
+                    // GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+                    int profileID = static_cast<int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(listboxLobbyPlayers, selectedIndices[i], 0)));
                     selectedUserIDs.insert(profileID);
                 }
 
@@ -2333,7 +2335,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 
 						PeerRequest req;
 						req.peerRequestType = PeerRequest::PEERREQUEST_GETEXTENDEDSTAGINGROOMINFO;
-						req.stagingRoom.id = (Int)GadgetListBoxGetItemData(control, rowSelected, 0);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						req.stagingRoom.id = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(control, rowSelected, 0)));
 
 						if (lastID != req.stagingRoom.id || now > lastFrame + 60)
 						{
@@ -2407,7 +2410,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 					GadgetListBoxGetSelected(GetGameListBox(), &selected);
 					if (selected >= 0)
 					{
-						Int selectedID = (Int)GadgetListBoxGetItemData(GetGameListBox(), selected);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						Int selectedID = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(GetGameListBox(), selected)));
 						if (selectedID >= 0)
 						{
 							auto Lobby = pLobbyInterface->GetLobbyFromID(selectedID);
@@ -2468,7 +2472,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 					GadgetListBoxGetSelected(GetGameListBox(), &selected);
 					if (selected >= 0)
 					{
-						Int selectedID = (Int)GadgetListBoxGetItemData(GetGameListBox(), selected);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						Int selectedID = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(GetGameListBox(), selected)));
 						if (selectedID > 0)
 						{
 							StagingRoomMap *srm = TheGameSpyInfo->getStagingRoomList();
@@ -2597,7 +2602,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 					if (rowSelected >= 0)
 					{
 						Int groupID;
-						groupID = (Int)GadgetComboBoxGetItemData(comboLobbyGroupRooms, rowSelected);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						groupID = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetComboBoxGetItemData(comboLobbyGroupRooms, rowSelected)));
 						//DEBUG_LOG(("ItemData was %d, current Group Room is %d", groupID, TheGameSpyInfo->getCurrentGroupRoom()));
 // did it change?
 						if (groupID != pRoomsInterface->GetCurrentRoomID())
@@ -2655,7 +2661,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 					Int pos = -1;
 					GadgetComboBoxGetSelectedPos(comboLobbyGroupRooms, &pos);
 					if (pos >= 0)
-						theLobbyFilter = (LobbyGameModeFilter)(Int)GadgetComboBoxGetItemData(comboLobbyGroupRooms, pos);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						theLobbyFilter = static_cast<LobbyGameModeFilter>(static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetComboBoxGetItemData(comboLobbyGroupRooms, pos))));
 					RefreshGameListBoxes();
 				}
 			}
@@ -2711,7 +2718,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 					if (pRoomsInterface != nullptr && pAuthInterface != nullptr && pStatsInterface != nullptr && pSocialInterface != nullptr)
 					{
 
-						int profileID = (int)GadgetListBoxGetItemData(listboxLobbyPlayers, rc->pos, 0);
+						// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+						int profileID = static_cast<int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(listboxLobbyPlayers, rc->pos, 0)));
 						NetworkRoomMember* roomMember = pRoomsInterface->GetRoomMemberFromID(profileID);
 
 						if (rc->pos >= 0)
@@ -2778,7 +2786,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 									break;
 								}
 
-								Int selectedID = (Int)GadgetListBoxGetItemData(control, rc->pos);
+								// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+								Int selectedID = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(control, rc->pos)));
 								if (selectedID > 0)
 								{
 									StagingRoomMap* srm = TheGameSpyInfo->getStagingRoomList();
@@ -2889,7 +2898,8 @@ WindowMsgHandledType WOLLobbyMenuSystem( GameWindow *window, UnsignedInt msg,
 						break;
 					}
 
-					Int selectedID = (Int)GadgetListBoxGetItemData(control, rc->pos);
+					// GeneralsX @bugfix Android port 07/11/2026 - Cast via uintptr_t for 64-bit
+					Int selectedID = static_cast<Int>(reinterpret_cast<uintptr_t>(GadgetListBoxGetItemData(control, rc->pos)));
 					if (selectedID > 0)
 					{
 						StagingRoomMap *srm = TheGameSpyInfo->getStagingRoomList();
