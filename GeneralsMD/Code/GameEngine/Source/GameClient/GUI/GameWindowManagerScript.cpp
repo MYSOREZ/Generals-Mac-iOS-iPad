@@ -1038,6 +1038,21 @@ static Bool parseText( const char *token, WinInstanceData *instData,
 		ptr++;
 	ptr++;  // skip the "
 	c = strtok( ptr, stringSeps );  // value
+
+	// GeneralsX @bugfix Android port 11/07/2026 TEXT = ""; (a genuinely
+	// empty string) leaves nothing for strtok() to find after it skips the
+	// opening quote (itself one of the separator chars) -- it returns NULL,
+	// and strlen(NULL) below is undefined behavior. Confirmed via a real
+	// device crash (wild PC, no matching /proc/self/maps entry) plus
+	// reproducing this exact buffer on the host. An empty label is a
+	// legitimate thing to want (e.g. a stat line populated later at
+	// runtime), so treat it as "" rather than failing the whole layout.
+	if( c == nullptr )
+	{
+		instData->m_textLabelString = AsciiString::TheEmptyString;
+		return TRUE;
+	}
+
 	if( strlen( c ) >= MAX_TEXT_LABEL )
 	{
 
