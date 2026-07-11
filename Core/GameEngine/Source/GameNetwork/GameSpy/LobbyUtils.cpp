@@ -293,7 +293,7 @@ static void gameTooltip(GameWindow* window,
 		return;
 	}
 
-	Int gameID = (Int)GadgetListBoxGetItemData(window, row, 0);
+	Int gameID = static_cast<Int>(reinterpret_cast<intptr_t>(GadgetListBoxGetItemData(window, row, 0)));
 #if defined(GENERALS_ONLINE)
 	NGMP_OnlineServices_LobbyInterface* pLobbyInterface = NGMP_OnlineServicesManager::GetInterface<NGMP_OnlineServices_LobbyInterface>();
 	if (pLobbyInterface == nullptr)
@@ -1188,7 +1188,7 @@ void RefreshGameListBox(GameWindow* win, Bool showMap)
 	GadgetListBoxGetSelected(win, &selectedIndex);
 	if (selectedIndex != -1)
 	{
-		selectedID = (Int)GadgetListBoxGetItemData(win, selectedIndex);
+		selectedID = static_cast<Int>(reinterpret_cast<intptr_t>(GadgetListBoxGetItemData(win, selectedIndex)));
 	}
 	int prevPos = GadgetListBoxGetTopVisibleEntry(win);
 
@@ -1405,7 +1405,7 @@ int GetGameListRowPixelOffsetForRow(GameWindow* window, int rowIndex, int rowHei
 		return 0;
 
 	// We rely on listbox item data storing lobbyID, like RefreshGameListBox uses
-	Int lobbyID = (Int)GadgetListBoxGetItemData(window, rowIndex);
+	Int lobbyID = static_cast<Int>(reinterpret_cast<intptr_t>(GadgetListBoxGetItemData(window, rowIndex)));
 	if (lobbyID == 0)
 		return 0;
 
@@ -1471,7 +1471,7 @@ void playerTemplateComboBoxTooltip(GameWindow *wndComboBox, WinInstanceData *ins
 {
 	Int index = 0;
 	GadgetComboBoxGetSelectedPos(wndComboBox, &index);
-	Int templateNum = (Int)GadgetComboBoxGetItemData(wndComboBox, index);
+	Int templateNum = static_cast<Int>(reinterpret_cast<intptr_t>(GadgetComboBoxGetItemData(wndComboBox, index)));
 	UnicodeString ustringTooltip;
 	if (templateNum == -1)
 	{
@@ -1502,7 +1502,7 @@ void playerTemplateListBoxTooltip(GameWindow *wndListBox, WinInstanceData *instD
 	if (row == -1 || col == -1)
 		return;
 
-	Int templateNum = (Int)GadgetListBoxGetItemData(wndListBox, row, col);
+	Int templateNum = static_cast<Int>(reinterpret_cast<intptr_t>(GadgetListBoxGetItemData(wndListBox, row, col)));
 	UnicodeString ustringTooltip;
 	if (templateNum == -1)
 	{
