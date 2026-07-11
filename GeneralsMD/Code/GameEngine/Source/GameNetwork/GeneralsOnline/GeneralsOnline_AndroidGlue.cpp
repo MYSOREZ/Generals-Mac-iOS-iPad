@@ -113,6 +113,18 @@ bool TryStartGeneralsOnline()
 	{
 		int64_t userID = static_cast<int64_t>(std::strtoll(session.userId.c_str(), nullptr, 10));
 		pAuthInterface->SetExternalSession(session.sessionToken, userID, session.displayName);
+
+		// GeneralsX @bugfix Android port 11/07/2026 upstream's real login
+		// flow (NGMP_OnlineServices_AuthInterface::BeginLogin()) always calls
+		// this before reaching the Welcome screen -- it's what actually
+		// fetches the MOTD (ProcessMOTD()) that WOLWelcomeMenu.cpp's news
+		// listbox reads. Our Android glue bypasses BeginLogin() entirely
+		// (the launcher already has a session token), so the MOTD was never
+		// fetched and the listbox only ever showed its fallback string.
+		// This call doesn't need auth (empty headers) and doesn't block --
+		// it races the WebSocket connect below, but a single small MOTD GET
+		// is comfortably faster in practice.
+		pAuthInterface->GoToDetermineNetworkCaps();
 	}
 
 	ClearGSMessageBoxes();
