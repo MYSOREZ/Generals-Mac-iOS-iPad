@@ -1139,6 +1139,7 @@ set(GAMEENGINE_SRC
     Include/GameNetwork/GeneralsOnline/OnlineServices_RoomsInterface.h
     Include/GameNetwork/GeneralsOnline/OnlineServices_SocialInterface.h
     Include/GameNetwork/GeneralsOnline/OnlineServices_StatsInterface.h
+    Include/GameNetwork/GeneralsOnline/PluginInterfaces.h
     Source/GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.cpp
     Source/GameNetwork/GeneralsOnline/GeneralsOnline_Settings.cpp
     Source/GameNetwork/GeneralsOnline/HTTP/HTTPManager.cpp
@@ -1152,6 +1153,7 @@ set(GAMEENGINE_SRC
     Source/GameNetwork/GeneralsOnline/OnlineServices_RoomsInterface.cpp
     Source/GameNetwork/GeneralsOnline/OnlineServices_SocialInterface.cpp
     Source/GameNetwork/GeneralsOnline/OnlineServices_StatsInterface.cpp
+    Source/GameNetwork/GeneralsOnline/PluginInterfaces.cpp
 #    Source/GameNetwork/IPEnumeration.cpp
 #    Source/GameNetwork/LANAPI.cpp
 #    Source/GameNetwork/LANAPICallbacks.cpp
@@ -1242,3 +1244,11 @@ target_precompile_headers(z_gameengine PRIVATE
     [["Utility/CppMacros.h"]] # Must be first, to be removed when abandoning VC6
     Include/Precompiled/PreRTS.h
 )
+
+# GeneralsX @bugfix Android port 07/11/2026 - upstream defines GENERALS_ONLINE globally via the
+# compiler command line (see go_client/main's GeneralsMD/Code/GameEngine/CMakeLists.txt), not via
+# a header #define. Several of our .cpp files check "#if defined(GENERALS_ONLINE)" before the NGMP
+# headers that #define it (as a fallback) get included, so without this, that check can silently
+# resolve to the wrong branch depending on each file's own #include order (e.g. SetLookAtPlayer's
+# declaration in PersistentStorageDefs.h picking the non-GeneralsOnline AsciiString overload).
+add_compile_definitions(GENERALS_ONLINE)

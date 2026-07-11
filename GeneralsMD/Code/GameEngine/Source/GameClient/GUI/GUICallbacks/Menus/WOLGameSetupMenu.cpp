@@ -73,6 +73,7 @@
 #endif
 #include <format>
 #include "GameNetwork/GeneralsOnline/OnlineServices_Init.h"
+#include "GameNetwork/GeneralsOnline/PluginInterfaces.h"
 #include "GameLogic/GameLogic.h"
 NGMPGame* TheNGMPGame = NULL;
 
