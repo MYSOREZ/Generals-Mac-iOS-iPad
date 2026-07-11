@@ -118,8 +118,8 @@
         <!-- GeneralsX @bugfix Android port 11/07/2026 LogViewerActivity's
              Share button used to hand the log over as raw Intent.EXTRA_TEXT,
              which (a) only works with the handful of apps that accept plain
-             text -- no "Save to Files/Downloads/Drive" target ever showed up
-             -- and (b) risks TransactionTooLargeException for a big log,
+             text (no "Save to Files/Downloads/Drive" target ever showed up),
+             and (b) risks TransactionTooLargeException for a big log,
              silently failing to launch anything. Sharing an actual file via
              FileProvider fixes both: any app that handles files (including
              "Save to...") becomes a valid target, and only a small content://
