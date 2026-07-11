@@ -466,9 +466,35 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 		fprintf(stderr, "[INI] load - processed total %d lines\n", lineCount);
 		fflush(stderr);
 	}
+	// GeneralsX @bugfix Android port 11/07/2026 the plain `catch (...)` below
+	// used to be the ONLY handler here, which logs that *something* failed
+	// but throws away the actual exception's content -- traced a real-device
+	// crash report (Weapon.ini, GitHub issue #2) back to this exact spot and
+	// still couldn't tell which weapon/field/token was at fault, because the
+	// original C++ exception (an INIException with a formatted message, or a
+	// raw ErrorCode enum thrown by scanIndexList()/findBlockParse() failures)
+	// was already gone by the time it got here. Catch the two concrete types
+	// this parser actually throws first so their content survives into the
+	// log, then keep the generic catch(...) as a fallback for anything else
+	// (e.g. std::bad_alloc from a genuinely oversized file).
+	catch (const INIException& e)
+	{
+		fprintf(stderr, "[INI] ERROR in load('%s') - INIException: %s\n",
+			filename.str(), e.mFailureMessage ? e.mFailureMessage : "(no message)");
+		fflush(stderr);
+		unPrepFile();
+		throw;
+	}
+	catch (ErrorCode ec)
+	{
+		fprintf(stderr, "[INI] ERROR in load('%s') - ErrorCode=%u\n", filename.str(), (unsigned)ec);
+		fflush(stderr);
+		unPrepFile();
+		throw;
+	}
 	catch (...)
 	{
-		fprintf(stderr, "[INI] ERROR in load('%s') - exception caught\n", filename.str());
+		fprintf(stderr, "[INI] ERROR in load('%s') - exception caught (unrecognized type)\n", filename.str());
 		fflush(stderr);
 		unPrepFile();
 

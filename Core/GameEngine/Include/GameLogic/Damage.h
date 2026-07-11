@@ -77,10 +77,14 @@ enum DamageType CPP_11(: Int)
 	DAMAGE_STEALTHJET_MISSILES		= 28,
 	DAMAGE_MOLOTOV_COCKTAIL				= 29,
 	DAMAGE_COMANCHE_VULCAN				= 30,
-#if RTS_GENERALS
+	// GeneralsX @bugfix Android port 11/07/2026 was `#if RTS_GENERALS`-only:
+	// Zero Hour's Weapon.ini also references DamageType=FLESHY_SNIPER (e.g.
+	// CINE_USAPathfinderSniperRifle, inherited from base Generals weapon
+	// data) -- excluding it from ZH builds left INI's scanIndexList() unable
+	// to find the token, throwing and aborting the whole engine init. Retail
+	// Zero Hour has this constant; keep it compiled for both games.
 	DAMAGE_FLESHY_SNIPER					= 31,		// like DAMAGE_SNIPER, but (generally) does no damage to vehicles.
-#endif
-	DAMAGE_SUBDUAL_MISSILE				/*= 31*/,	///< Damage that does not kill you, but produces some special effect based on your Body Module. Separate HP from normal damage.
+	DAMAGE_SUBDUAL_MISSILE				/*= 32*/,	///< Damage that does not kill you, but produces some special effect based on your Body Module. Separate HP from normal damage.
 	DAMAGE_SUBDUAL_VEHICLE				/*= 32*/,
 	DAMAGE_SUBDUAL_BUILDING				/*= 33*/,
 	DAMAGE_SUBDUAL_UNRESISTABLE		/*= 34*/,
