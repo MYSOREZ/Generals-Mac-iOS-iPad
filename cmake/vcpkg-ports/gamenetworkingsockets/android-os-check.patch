@@ -1,0 +1,13 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -159,6 +159,10 @@
+ 		target_compile_definitions(${TGT} PUBLIC FREEBSD)
+ 	elseif(CMAKE_SYSTEM_NAME MATCHES OpenBSD)
+ 		target_compile_definitions(${TGT} PUBLIC OPENBSD)
++	elseif(CMAKE_SYSTEM_NAME MATCHES Android)
++		# GeneralsX @build Android port 12/07/2026 bionic is Linux-compatible
++		# for everything GNS's POSIX/Linux code paths use (epoll, eventfd, ...)
++		target_compile_definitions(${TGT} PUBLIC LINUX POSIX ANDROID)
+ 	elseif(CMAKE_SYSTEM_NAME MATCHES Windows)
+ 		target_compile_definitions(${TGT} PUBLIC _WINDOWS)
+ 		if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
