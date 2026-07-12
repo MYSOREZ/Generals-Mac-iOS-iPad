@@ -355,7 +355,10 @@ class CSignalingClient : public ISignalingClient
 			(void)hConn;
 
 			std::vector<uint8_t> vecPayload(cbMsg);
-			memcpy_s(vecPayload.data(), vecPayload.size(), pMsg, cbMsg);
+			// GeneralsX @bugfix Android port 12/07/2026 - memcpy_s is an MSVC-only
+			// safe-libc extension; vecPayload is sized to exactly cbMsg above, so
+			// plain memcpy needs no bounds re-check.
+			memcpy(vecPayload.data(), pMsg, cbMsg);
 
 			m_pOwner->Send(m_targetUserID, vecPayload);
 			return true;
@@ -1098,8 +1101,12 @@ std::string PlayerConnection::GetStats()
 
 std::string PlayerConnection::GetConnectionType()
 {
+	// GeneralsX @bugfix Android port 12/07/2026 - ISteamNetworkingSockets has
+	// no GetConnectionType method; GetDetailedConnectionStatus (same call
+	// GetStats() above uses) is the actual API, and its verbose text dump is
+	// what IsDirect() greps for the "Relayed" substring in.
 	char szBuf[2048] = { 0 };
-	int ret = SteamNetworkingSockets()->GetConnectionType(m_hSteamConnection, szBuf, 2048);
+	int ret = SteamNetworkingSockets()->GetDetailedConnectionStatus(m_hSteamConnection, szBuf, 2048);
 	NetworkLog(ELogVerbosity::LOG_DEBUG, "[STEAM] PlayerConnection::GetConnectionType returned %d", ret);
 	return std::string(szBuf);
 }

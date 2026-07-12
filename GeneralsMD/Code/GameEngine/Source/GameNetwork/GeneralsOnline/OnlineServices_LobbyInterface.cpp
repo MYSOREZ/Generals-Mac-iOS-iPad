@@ -3,6 +3,7 @@
 #include "GameNetwork/GeneralsOnline/HTTP/HTTPManager.h"
 #include "GameNetwork/GeneralsOnline/OnlineServices_Init.h"
 #include "GameNetwork/GeneralsOnline/PluginInterfaces.h"
+#include "GameNetwork/GeneralsOnline/NetworkMesh.h"
 #include "GameClient/MapUtil.h"
 #include "GameLogic/GameLogic.h"
 

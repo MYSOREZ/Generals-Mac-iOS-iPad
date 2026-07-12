@@ -1,4 +1,5 @@
 #include "GameNetwork/GeneralsOnline/NGMPGame.h"
+#include "GameNetwork/GeneralsOnline/NetworkMesh.h"
 #include "GameLogic/VictoryConditions.h"
 #include "Common/PlayerList.h"
 #include "GameLogic/GameLogic.h"

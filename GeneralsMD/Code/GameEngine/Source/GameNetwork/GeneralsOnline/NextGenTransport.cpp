@@ -1,11 +1,12 @@
 #include "PreRTS.h" // This must go first in EVERY cpp file int the GameEngine
 
-#include "Common/CRC.h"
+#include "Common/crc.h"
 #include "GameNetwork/NetworkInterface.h"
 #include "GameNetwork/GeneralsOnline/NextGenTransport.h"
 
-#include "GameNetwork/GeneralsOnline/ngmp_include.h"
-#include "GameNetwork/GeneralsOnline/ngmp_interfaces.h"
+#include "GameNetwork/GeneralsOnline/NGMP_include.h"
+#include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
+#include "GameNetwork/GeneralsOnline/NetworkMesh.h"
 
 #ifdef _INTERNAL
 // for occasional debugging...

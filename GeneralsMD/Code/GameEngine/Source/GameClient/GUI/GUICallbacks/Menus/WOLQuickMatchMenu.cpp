@@ -88,6 +88,7 @@ extern NGMPGame* TheNGMPGame;
 #include "GameNetwork/GeneralsOnline/OnlineServices_MatchmakingInterface.h"
 #include "GameNetwork/GeneralsOnline/OnlineServices_LobbyInterface.h"
 #include "GameNetwork/GeneralsOnline/OnlineServices_SocialInterface.h"
+#include "GameNetwork/GeneralsOnline/NetworkMesh.h"
 #include "GameNetwork/GeneralsOnline/OnlineServices_StatsInterface.h"
 
 // PRIVATE DATA ///////////////////////////////////////////////////////////////////////////////////

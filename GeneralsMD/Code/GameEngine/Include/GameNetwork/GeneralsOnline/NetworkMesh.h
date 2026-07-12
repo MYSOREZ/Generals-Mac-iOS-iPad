@@ -5,18 +5,17 @@
 #include <ws2ipdef.h>
 #endif
 #include <steam/steamnetworkingsockets.h>
+// GeneralsX @bugfix Android port 12/07/2026 - EConnectionState used to be
+// defined locally right here (this file is from the older go_int 32ae5135
+// snapshot); it's now canonically declared in PluginInterfaces.h (ported
+// later from go_client/main for the anticheat plugin interface, which
+// AnticheatPlugInterface::StartSignalling/DisconnectPlayer/etc. -- called
+// from NetworkMesh.cpp -- already take as a parameter type). Two same-named
+// enum classes in one translation unit is a hard redefinition error, so this
+// now just includes the one true definition instead of shadowing it.
+#include "GameNetwork/GeneralsOnline/PluginInterfaces.h"
 
 class NetRoom_ChatMessagePacket;
-
-enum class EConnectionState
-{
-	NOT_CONNECTED,
-	CONNECTING_DIRECT,
-	FINDING_ROUTE,
-	CONNECTED_DIRECT,
-	CONNECTION_FAILED,
-	CONNECTION_DISCONNECTED
-};
 
 // trivial signalling client interface
 class ISignalingClient
