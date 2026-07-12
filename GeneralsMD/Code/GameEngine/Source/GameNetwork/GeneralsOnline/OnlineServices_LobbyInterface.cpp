@@ -1441,12 +1441,14 @@ void NGMP_OnlineServices_LobbyInterface::OnJoinedOrCreatedLobby(bool bAlreadyUpd
 	NetworkLog(ELogVerbosity::LOG_RELEASE, "[AC] Begin Session End");
 
 	// join the network mesh too
-	// GeneralsX @bugfix Android port 10/07/2026 P2P transport (NetworkMesh)
-	// deferred, see NGMP_include.h -- leave m_pLobbyMesh null in this build.
 #if defined(GENERALS_ONLINE_ENABLE_P2P_TRANSPORT)
 	if (m_pLobbyMesh == nullptr)
 	{
+		fprintf(stderr, "DEBUG-P2P: OnJoinedOrCreatedLobby creating NetworkMesh\n");
+		fflush(stderr);
 		m_pLobbyMesh = new NetworkMesh();
+		fprintf(stderr, "DEBUG-P2P: OnJoinedOrCreatedLobby NetworkMesh created -> %p\n", (void*)m_pLobbyMesh);
+		fflush(stderr);
 	}
 #endif
 

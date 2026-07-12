@@ -577,10 +577,33 @@ public:
 
 NetworkMesh::NetworkMesh()
 {
-	SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_LogLevel_P2PRendezvous, k_ESteamNetworkingSocketsDebugOutputType_Error);
+	// GeneralsX @bugfix Android port 12/07/2026 - Diagnostic checkpoints for a
+	// real-device crash (fault_addr=0x80000000000009) that happens somewhere
+	// in this first-ever exercise of the P2P transport on Android, right
+	// after CreateLobby succeeds -- narrows down which GNS call is at fault.
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor enter\n");
+	fflush(stderr);
+
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor calling SteamNetworkingUtils()\n");
+	fflush(stderr);
+	ISteamNetworkingUtils* pUtils = SteamNetworkingUtils();
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor SteamNetworkingUtils() -> %p\n", (void*)pUtils);
+	fflush(stderr);
+	if (pUtils == nullptr)
+	{
+		NetworkLog(ELogVerbosity::LOG_RELEASE, "SteamNetworkingUtils() returned null");
+		return;
+	}
+	pUtils->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_LogLevel_P2PRendezvous, k_ESteamNetworkingSocketsDebugOutputType_Error);
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor SetGlobalConfigValueInt32 (LogLevel_P2PRendezvous) done\n");
+	fflush(stderr);
 
 	// try a shutdown
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor calling GameNetworkingSockets_Kill()\n");
+	fflush(stderr);
 	GameNetworkingSockets_Kill();
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor GameNetworkingSockets_Kill() done\n");
+	fflush(stderr);
 
 	NGMP_OnlineServicesManager* pOnlineServicesMgr = NGMP_OnlineServicesManager::GetInstance();
 	if (pOnlineServicesMgr == nullptr)
@@ -605,6 +628,8 @@ NetworkMesh::NetworkMesh()
 
 
 	int64_t localUserID = pAuthInterface->GetUserID();
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor localUserID=%lld\n", (long long)localUserID);
+	fflush(stderr);
 
 	SteamNetworkingIdentity identityLocal;
 	identityLocal.Clear();
@@ -616,17 +641,27 @@ NetworkMesh::NetworkMesh()
 		NetworkLog(ELogVerbosity::LOG_RELEASE, "SteamNetworkingIdentity is invalid");
 		return;
 	}
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor identityLocal valid\n");
+	fflush(stderr);
 
 	// initialize Steam Sockets
 	SteamDatagramErrMsg errMsg;
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor calling GameNetworkingSockets_Init\n");
+	fflush(stderr);
 	if (!GameNetworkingSockets_Init(&identityLocal, errMsg))
 	{
 		NetworkLog(ELogVerbosity::LOG_RELEASE, "GameNetworkingSockets_Init failed.  %s", errMsg);
+		fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor GameNetworkingSockets_Init FAILED: %s\n", errMsg);
+		fflush(stderr);
 		return;
 	}
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor GameNetworkingSockets_Init OK\n");
+	fflush(stderr);
 
 	// TODO_STEAM: Dont hardcode, get everything from service
 	SteamNetworkingUtils()->SetGlobalConfigValueString(k_ESteamNetworkingConfig_P2P_STUN_ServerList, "stun:stun.playgenerals.online:53,stun:stun.playgenerals.online:3478,stun.l.google.com:19302,stun1.l.google.com:19302,stun2.l.google.com:19302,stun3.l.google.com:19302,stun4.l.google.com:19302");
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor STUN server list set\n");
+	fflush(stderr);
 
 	// comma seperated setting lists
 	const char* turnList = "turn:turn.playgenerals.online:53?transport=udp,turn:turn.playgenerals.online:3478?transport=udp";
@@ -646,6 +681,9 @@ NetworkMesh::NetworkMesh()
 	SteamNetworkingUtils()->SetGlobalConfigValueString(k_ESteamNetworkingConfig_P2P_TURN_ServerList, turnList);
 	SteamNetworkingUtils()->SetGlobalConfigValueString(k_ESteamNetworkingConfig_P2P_TURN_UserList, m_strTurnUsernameString.c_str());
 	SteamNetworkingUtils()->SetGlobalConfigValueString(k_ESteamNetworkingConfig_P2P_TURN_PassList, m_strTurnTokenString.c_str());
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor TURN server list set (turnUser empty=%d turnToken empty=%d)\n",
+		(int)m_strTurnUsername.empty(), (int)m_strTurnToken.empty());
+	fflush(stderr);
 
 	ServiceConfig& serviceConf = pOnlineServicesMgr->GetServiceConfig();
 
@@ -658,18 +696,26 @@ NetworkMesh::NetworkMesh()
 	{
 		SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_P2P_Transport_ICE_Enable, k_nSteamNetworkingConfig_P2P_Transport_ICE_Enable_All);
 	}
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor ICE enable config set\n");
+	fflush(stderr);
 
 	m_hListenSock = k_HSteamListenSocket_Invalid;
-	
+
 	// create signalling service
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor creating CSignalingClient\n");
+	fflush(stderr);
 	m_pSignaling = new CSignalingClient(SteamNetworkingSockets());
 	if (m_pSignaling == nullptr)
 	{
 		NetworkLog(ELogVerbosity::LOG_RELEASE, "CreateTrivialSignalingClient failed.  %s", errMsg);
 		return;
 	}
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor CSignalingClient created -> %p\n", (void*)m_pSignaling);
+	fflush(stderr);
 
 	SteamNetworkingUtils()->SetGlobalCallback_SteamNetConnectionStatusChanged(OnSteamNetConnectionStatusChanged);
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor SetGlobalCallback_SteamNetConnectionStatusChanged done\n");
+	fflush(stderr);
 
 	ESteamNetworkingSocketsDebugOutputType logType =
 #if defined(_DEBUG)
@@ -684,18 +730,26 @@ NetworkMesh::NetworkMesh()
 		{
 			NetworkLog(ELogVerbosity::LOG_RELEASE, "[STEAM NETWORKING LOGFUNC] %s", pszMsg);
 		});
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor debug output function set\n");
+	fflush(stderr);
 
 	int localPort = 0;
 
 	// create sockets
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor calling CreateListenSocketP2P\n");
+	fflush(stderr);
 	SteamNetworkingConfigValue_t opt;
 	opt.SetInt32(k_ESteamNetworkingConfig_SymmetricConnect, 1); // << Note we set symmetric mode on the listen socket
 	m_hListenSock = SteamNetworkingSockets()->CreateListenSocketP2P(localPort, 1, &opt);
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor CreateListenSocketP2P -> %d\n", (int)m_hListenSock);
+	fflush(stderr);
 
 	if (m_hListenSock == k_HSteamListenSocket_Invalid)
 	{
 		NetworkLog(ELogVerbosity::LOG_RELEASE, "CreateListenSocketP2P failed. Sock was invalid");
 	}
+	fprintf(stderr, "DEBUG-P2P: NetworkMesh ctor exit\n");
+	fflush(stderr);
 }
 
 
@@ -964,6 +1018,15 @@ void NetworkMesh::Disconnect()
 
 void NetworkMesh::Tick()
 {
+	static bool s_bFirstTick = true;
+	if (s_bFirstTick)
+	{
+		s_bFirstTick = false;
+		fprintf(stderr, "DEBUG-P2P: NetworkMesh::Tick first call, m_pSignaling=%p connections=%zu\n",
+			(void*)m_pSignaling, m_mapConnections.size());
+		fflush(stderr);
+	}
+
 	// Check for incoming signals, and dispatch them
 	if (m_pSignaling != nullptr)
 	{

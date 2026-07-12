@@ -109,7 +109,14 @@ void NetworkLog(ELogVerbosity logVerbosity, const char* fmt, ...)
 	OutputDebugString(strLogBuffer.c_str());
 	OutputDebugString("\n");
 #else
+	// GeneralsX @bugfix Android port 12/07/2026 - without an explicit flush,
+	// a crash shortly after a NetworkLog call can lose it from stderr's
+	// buffer entirely, even though the line executed -- exactly what made an
+	// early P2P-transport crash (build #117) unexplainable from the device
+	// log alone (no NetworkMesh construction/Tick output at all, despite the
+	// crash happening well after CreateLobby succeeded).
 	fprintf(stderr, "%s\n", strLogBuffer.c_str());
+	fflush(stderr);
 #endif
 }
 
