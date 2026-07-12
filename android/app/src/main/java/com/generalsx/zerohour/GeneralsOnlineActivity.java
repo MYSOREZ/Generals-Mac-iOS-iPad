@@ -53,18 +53,15 @@ import com.google.android.material.card.MaterialCardView;
 
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 
 public class GeneralsOnlineActivity extends Activity {
 
-    private static final String API_BASE = "https://api.playgenerals.online/env/prod/contract/1/";
+    // GeneralsX @bugfix Android port 12/07/2026 session store + HTTP auth
+    // calls moved to GeneralsOnlineSession so GeneralsZHActivity can refresh
+    // the session token at game launch (they expire server-side within
+    // hours; a stale marker file made the game's Online button fail with
+    // "HTTP response code said error"/401 despite a "valid" local session).
     // GeneralsX @bugfix Android port 10/07/2026 the reference client
     // (OnlineServices_Auth.cpp BeginLogin) always appends &client=<id> to
     // this URL -- without it the site apparently doesn't reliably associate
@@ -74,16 +71,12 @@ public class GeneralsOnlineActivity extends Activity {
     private static final String LOGIN_URL_FMT = "https://www.playgenerals.online/login/?gamecode=%s&client=%s";
     private static final String CLIENT_ID = "custom_third_party_client";
 
-    private static final String PREFS_NAME = "generalsonline_session";
-    private static final String PREF_SESSION_TOKEN = "session_token";
-    private static final String PREF_REFRESH_TOKEN = "refresh_token";
-    private static final String PREF_USER_ID = "user_id";
-    private static final String PREF_DISPLAY_NAME = "display_name";
-    private static final String PREF_WS_URI = "ws_uri";
-
-    // Native code (once the multiplayer client is wired up) reads this --
-    // same plain-marker-file convention as gamedata_path.txt.
-    private static final String SESSION_MARKER_NAME = "generalsonline_session.txt";
+    private static final String PREFS_NAME = GeneralsOnlineSession.PREFS_NAME;
+    private static final String PREF_SESSION_TOKEN = GeneralsOnlineSession.PREF_SESSION_TOKEN;
+    private static final String PREF_REFRESH_TOKEN = GeneralsOnlineSession.PREF_REFRESH_TOKEN;
+    private static final String PREF_USER_ID = GeneralsOnlineSession.PREF_USER_ID;
+    private static final String PREF_DISPLAY_NAME = GeneralsOnlineSession.PREF_DISPLAY_NAME;
+    private static final String PREF_WS_URI = GeneralsOnlineSession.PREF_WS_URI;
 
     // Matches the reference client's own 1s poll cadence
     // (OnlineServices_Auth.cpp::Tick, timeBetweenChecks = 1000).
@@ -217,7 +210,7 @@ public class GeneralsOnlineActivity extends Activity {
         signInButton.setEnabled(false);
         statusText.setText("Signing in...");
         new Thread(() -> {
-            AuthResult result = callLoginWithToken(refreshToken);
+            GeneralsOnlineSession.AuthResult result = callLoginWithToken(refreshToken);
             handler.post(() -> {
                 busy = false;
                 signInButton.setEnabled(true);
@@ -289,12 +282,12 @@ public class GeneralsOnlineActivity extends Activity {
 
     private void pollOnce(String code) {
         new Thread(() -> {
-            AuthResult result = callCheckLogin(code);
+            GeneralsOnlineSession.AuthResult result = callCheckLogin(code);
             handler.post(() -> handlePollResult(code, result));
         }).start();
     }
 
-    private void handlePollResult(String code, AuthResult result) {
+    private void handlePollResult(String code, GeneralsOnlineSession.AuthResult result) {
         if (result == null) {
             busy = false;
             signInButton.setEnabled(true);
@@ -334,17 +327,8 @@ public class GeneralsOnlineActivity extends Activity {
         }
     }
 
-    private static class AuthResult {
-        int state = -1;
-        String sessionToken = "";
-        String refreshToken = "";
-        long userId = -1;
-        String displayName = "";
-        String wsUri = "";
-    }
-
     // Runs on a background thread.
-    private AuthResult callCheckLogin(String code) {
+    private GeneralsOnlineSession.AuthResult callCheckLogin(String code) {
         JSONObject body = new JSONObject();
         try {
             body.put("code", code);
@@ -355,101 +339,20 @@ public class GeneralsOnlineActivity extends Activity {
         } catch (Exception e) {
             return null;
         }
-        return postJson("CheckLogin", body, null);
+        return GeneralsOnlineSession.postJson("CheckLogin", body, null);
     }
 
     // Runs on a background thread.
-    private AuthResult callLoginWithToken(String refreshToken) {
-        JSONObject body = new JSONObject();
-        try {
-            body.put("reserved_0", "");
-            body.put("reserved_1", "");
-            body.put("reserved_2", "");
-        } catch (Exception e) {
-            return null;
-        }
-        return postJson("LoginWithToken", body, refreshToken);
+    private GeneralsOnlineSession.AuthResult callLoginWithToken(String refreshToken) {
+        return GeneralsOnlineSession.loginWithToken(refreshToken);
     }
 
-    private AuthResult postJson(String endpoint, JSONObject body, String bearerToken) {
-        HttpURLConnection conn = null;
-        try {
-            URL url = new URL(API_BASE + endpoint);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            if (bearerToken != null) {
-                conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
-            }
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
-            conn.setDoOutput(true);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.toString().getBytes(StandardCharsets.UTF_8));
-            }
-
-            int status = conn.getResponseCode();
-            java.io.InputStream in = (status >= 200 && status < 300) ? conn.getInputStream() : conn.getErrorStream();
-            if (in == null) {
-                return null;
-            }
-            JSONObject json = new JSONObject(readAll(in));
-
-            AuthResult result = new AuthResult();
-            result.state = json.optInt("result", -1);
-            result.sessionToken = json.optString("session_token", "");
-            result.refreshToken = json.optString("refresh_token", "");
-            result.userId = json.optLong("user_id", -1);
-            result.displayName = json.optString("display_name", "");
-            result.wsUri = json.optString("ws_uri", "");
-            return result;
-        } catch (Exception e) {
-            return null;
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-    }
-
-    private static String readAll(java.io.InputStream in) throws IOException {
-        java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
-        byte[] chunk = new byte[4096];
-        int n;
-        while ((n = in.read(chunk)) != -1) {
-            buf.write(chunk, 0, n);
-        }
-        return buf.toString("UTF-8");
-    }
-
-    private void saveSession(AuthResult result) {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit()
-            .putString(PREF_SESSION_TOKEN, result.sessionToken)
-            .putString(PREF_REFRESH_TOKEN, result.refreshToken)
-            .putLong(PREF_USER_ID, result.userId)
-            .putString(PREF_DISPLAY_NAME, result.displayName)
-            .putString(PREF_WS_URI, result.wsUri)
-            .apply();
-
-        // Plain marker file for native code, mirroring gamedata_path.txt --
-        // one "key=value" per line, no secrets beyond what's already only
-        // readable by this app's own uid (same sandboxing as every other
-        // marker file this app writes).
-        File marker = new File(getFilesDir(), SESSION_MARKER_NAME);
-        try (FileWriter w = new FileWriter(marker, false)) {
-            w.write("session_token=" + result.sessionToken + "\n");
-            w.write("user_id=" + result.userId + "\n");
-            w.write("display_name=" + result.displayName + "\n");
-            w.write("ws_uri=" + result.wsUri + "\n");
-        } catch (IOException e) {
-            // Not fatal: native multiplayer code isn't wired up yet anyway.
-        }
+    private void saveSession(GeneralsOnlineSession.AuthResult result) {
+        GeneralsOnlineSession.saveSession(this, result);
     }
 
     private void clearSession() {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().clear().apply();
-        new File(getFilesDir(), SESSION_MARKER_NAME).delete();
+        GeneralsOnlineSession.clearSession(this);
     }
 
     private void onSignOut() {
