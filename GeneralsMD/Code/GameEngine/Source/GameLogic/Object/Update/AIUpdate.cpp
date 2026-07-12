@@ -204,8 +204,23 @@ const LocomotorTemplateVector* AIUpdateModuleData::findLocomotorTemplateVector(L
 		fflush(stderr);
 		if (!lt)
 		{
-			DEBUG_CRASH(("Locomotor %s not found!",token));
-			throw INI_INVALID_DATA;
+			// GeneralsX @bugfix Android port 12/07/2026 - A real-device log
+			// (GitHub issue #2, stock/patched retail data) showed this throw
+			// firing for AirF_AmericaJetSpectreGunship1's SET_PANIC entry
+			// ("SpectreGunshipTransitLocomotor" not found in TheLocomotorStore),
+			// which -- because INI.cpp's per-block catch re-throws -- takes
+			// down the entire airforcegeneral.ini load and with it the whole
+			// game, over one unresolved locomotor name on one unit's rarely-
+			// used panic state. Skip the bad entry instead of aborting the
+			// load; a thin/missing locomotor set is something the AI already
+			// has to tolerate (units that never define SET_PANIC at all rely
+			// on the same empty-vector fallback), so this degrades a single
+			// unit's panic behavior instead of crashing the whole game.
+			DEBUG_CRASH(("Locomotor %s not found -- skipping, not aborting the file load", token));
+			fprintf(stderr, "WARNING: Locomotor '%s' not found for object '%s' set=%d -- skipped\n",
+				token, tt->getName().str(), (int)set);
+			fflush(stderr);
+			continue;
 		}
 		self->m_locomotorTemplates[set].push_back(lt);
 	}
