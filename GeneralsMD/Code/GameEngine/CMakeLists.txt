@@ -1223,6 +1223,22 @@ endif()
 find_package(CURL CONFIG REQUIRED)
 target_link_libraries(z_gameengine PUBLIC CURL::libcurl)
 
+# GeneralsX @feature Android port 12/07/2026 Valve GameNetworkingSockets for
+# the GeneralsOnline P2P match transport (NetworkMesh/NextGenTransport, ported
+# from GeneralsOnlineDevelopmentTeam/GameClient). vcpkg's 1.6.0 port ships the
+# native ICE client (STUN/TURN) as a default feature, so no external
+# steamwebrtc/webrtc-lite binary is needed -- upstream's Windows build predates
+# that and still vendors webrtc-lite.lib. Our static triplet exports the _s
+# target (which also injects STEAMNETWORKINGSOCKETS_STATIC_LINK for consumers).
+if(ANDROID)
+    find_package(GameNetworkingSockets CONFIG REQUIRED)
+    if(TARGET GameNetworkingSockets::GameNetworkingSockets_s)
+        target_link_libraries(z_gameengine PUBLIC GameNetworkingSockets::GameNetworkingSockets_s)
+    else()
+        target_link_libraries(z_gameengine PUBLIC GameNetworkingSockets::GameNetworkingSockets)
+    endif()
+endif()
+
 target_include_directories(z_gameengine PRIVATE
     Include/Precompiled
 )
