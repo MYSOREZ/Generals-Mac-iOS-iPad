@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">取消</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">GeneralsZH 设置</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">Android 设置</string>
+    <string name="setup_fallback_warning">正常的设置界面加载失败（%1$s）。已显示简化版界面，方便你仍能访问日志或游戏文件夹。</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">游戏文件夹</string>
+    <string name="setup_button_select_game_folder">选择游戏文件夹</string>
+    <string name="setup_button_launch_game">启动游戏</string>
+    <string name="setup_button_view_logs">查看日志</string>
+    <string name="setup_button_clear_game_folder">重置游戏文件夹</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">游戏文件夹：未设置。\n</string>
+    <string name="setup_status_folder_line">游戏文件夹：%1$s\n</string>
+    <string name="setup_status_folder_valid">状态：看起来有效（已找到游戏数据文件）。\n</string>
+    <string name="setup_status_folder_invalid">状态：该文件夹中没有找到 INIZH.big / INI.big — 请确认选择的是正确的文件夹。\n</string>
+    <string name="setup_status_logs_note">崩溃日志/引擎日志保存在本应用的私有存储中，只能通过上方的“查看日志”访问 —— Android 出于设计原因将它们对普通文件管理器隐藏（这是 Android 标准的沙盒机制，并非本应用特有）。</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">语言</string>
+    <string name="setup_language_help">更改此设置应用、日志查看器和文件夹选择器的语言。对于德语、西班牙语、中文和俄语，还会同时切换游戏本体的文字 —— 但仅当你的游戏文件夹中确实存在该语言的数据时才会生效（data/&lt;语言&gt;/generals.csf）；本应用永远不会自行提供或伪造游戏文字。其他语言不会影响游戏本体的文字。“跟随系统”会使用手机的语言，如果列表中没有该语言，则回退为英语。</string>
+    <string name="setup_language_status">语言：%1$s</string>
+    <string name="setup_button_change_language">更改语言</string>
+    <string name="setup_language_dialog_title">选择语言</string>
+    <string name="setup_language_system_default">跟随系统</string>
+    <string name="setup_language_game_status_default">游戏文字：不受此设置影响（使用游戏自身在 registry.ini 中的语言，默认为英语）。</string>
+    <string name="setup_language_game_status_override">游戏文字：已同步切换（在游戏文件夹中找到 data/%1$s/generals.csf）。</string>
+    <string name="setup_language_game_status_missing">游戏文字：未切换 —— 游戏文件夹中未找到 data/%1$s/generals.csf，因此游戏保留其原有语言。</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">菜单文字大小</string>
+    <string name="setup_text_size_label">缩放：%1$d%%</string>
+    <string name="setup_button_apply_text_size">应用菜单文字大小</string>
+    <string name="setup_text_size_help">根据屏幕分辨率缩放大部分菜单按钮/标签文字。70 是游戏自身的默认值；数值越大菜单文字越大。将在下次启动游戏时生效，不会立即生效。</string>
+    <string name="setup_toast_text_size_saved">已保存，将在下次启动游戏时生效。</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">自定义 Vulkan 驱动（高级选项，仅限 Adreno GPU）</string>
+    <string name="setup_button_import_driver">导入驱动（.zip）</string>
+    <string name="setup_button_reset_driver">重置为推荐驱动</string>
+    <string name="setup_driver_help">加载一个 Vulkan 驱动（Mesa Turnip 构建版本）来代替手机自带的驱动，这与 Winlator 和 AetherSX2 使用的技术相同。这可以让一些高通 Adreno 手机运行游戏，即使其原厂驱动只支持 Vulkan 1.1/1.2（DXVK 需要 1.3）。在符合条件的 Adreno 手机上会自动应用此驱动 —— 如果你之后导入了其他驱动，"重置为推荐驱动"可以恢复这个自动选择。\n\n此功能对 Mali、PowerVR 等非 Adreno GPU 无效 —— 这些 GPU 不受此选项影响，也没有对应的替代方案。\n\n"导入驱动"允许你用自己的 adrenotools 格式驱动 .zip 文件覆盖自动选择（例如来自 GitHub 上的 K11MCH1/AdrenoToolsDrivers 或 The412Banner/Banners-Turnip）。将在下次启动时生效，不会立即生效。</string>
+    <string name="setup_driver_status_none">当前未使用自定义驱动 —— 使用手机自带的 Vulkan 驱动。</string>
+    <string name="setup_driver_status_auto">推荐驱动（已为此设备自动选择）：%1$s</string>
+    <string name="setup_driver_status_manual">自定义驱动（手动导入）：%1$s</string>
+    <string name="setup_driver_unknown">（未知）</string>
+    <string name="setup_toast_no_file_picker">没有可用的文件选择器：%1$s</string>
+    <string name="setup_toast_reset_auto">重置完成，已重新应用适合此设备的推荐驱动。</string>
+    <string name="setup_toast_reset_stock">重置完成，将使用手机自带的 Vulkan 驱动。</string>
+    <string name="setup_toast_driver_import_no_tmp">无法创建用于导入驱动的临时文件夹</string>
+    <string name="setup_toast_driver_import_failed">导入失败：%1$s</string>
+    <string name="setup_toast_driver_import_no_meta">导入失败：在 .zip 中未找到 meta.json（不是有效的 adrenotools 驱动包）</string>
+    <string name="setup_toast_driver_import_bad_meta">导入失败：meta.json 无效（%1$s）</string>
+    <string name="setup_toast_driver_import_no_finalize">导入失败：无法完成驱动文件夹的创建</string>
+    <string name="setup_toast_driver_config_failed">无法保存驱动配置：%1$s</string>
+    <string name="setup_toast_driver_imported">驱动已导入：%1$s。将在下次启动时生效。</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">在线多人游戏</string>
+    <string name="setup_button_online_account">GeneralsOnline 账号</string>
+    <string name="setup_online_signed_in">已登录为 %1$s。</string>
+    <string name="setup_online_signed_out">未登录 —— 在线对战需要登录。</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">使用说明</string>
+    <string name="setup_how_it_works_body">1.「选择游戏文件夹」会在手机存储中打开一个文件夹浏览器。找到你复制自己的 Command &amp; Conquer Generals Zero Hour 安装文件的位置（包含 INIZH.big、Data\\、ZH_Generals\\ 等的文件夹），然后点击「使用此文件夹」。\n\n2. 如果浏览时列表为空，说明 Android 首先需要「管理所有文件的访问权限」——请在弹出的界面中授予该权限（这是 Android 的普通权限，无需 Root）。\n\n3.「查看日志」会显示引擎日志，如果游戏发生崩溃，还会显示原生崩溃日志 —— 无需电脑或 adb。点击那里的分享按钮即可把日志发送给自己。\n\n4.「启动游戏」会使用你选择的文件夹启动游戏。</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">请在下一个界面中授予「允许管理所有文件的访问权限」，然后返回并再次点击「选择游戏文件夹」。</string>
+    <string name="setup_toast_folder_saved">游戏文件夹已保存。</string>
+    <string name="setup_toast_folder_saved_invalid">已保存，但未在其中找到 INIZH.big/INI.big —— 请检查该文件夹。</string>
+    <string name="setup_toast_marker_save_failed">无法保存文件夹标记：%1$s</string>
+    <string name="setup_toast_folder_cleared">已重置，游戏将回退使用默认文件夹。</string>
+    <string name="setup_toast_options_dir_failed">无法创建 Options.ini 所在的文件夹</string>
+    <string name="setup_toast_options_save_failed">无法保存 Options.ini：%1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">选择游戏文件夹</string>
+    <string name="folderpicker_up_entry">⬆️  ..（上一级）</string>
+    <string name="folderpicker_button_use">使用此文件夹</string>
+    <string name="folderpicker_hint_valid">✓ 此文件夹包含 INIZH.big/INI.big —— 看起来正确。</string>
+    <string name="folderpicker_hint_invalid">请进入你的游戏文件夹，然后点击「使用此文件夹」。</string>
+    <string name="folderpicker_toast_cant_read">无法读取此文件夹。如果到处都显示为空，请先在设置界面中授予「所有文件的访问权限」。</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">日志</string>
+    <string name="logviewer_button_clear">清除日志</string>
+    <string name="logviewer_button_copy">复制</string>
+    <string name="logviewer_button_share">分享</string>
+    <string name="logviewer_toast_copied">已复制到剪贴板。</string>
+    <string name="logviewer_section_crash_log">=== crash.log（原生崩溃处理器，内部存储）===\n</string>
+    <string name="logviewer_crash_log_absent">（不存在 —— 自安装以来未记录到原生崩溃，或该应用从未启动到加载库文件之后的阶段）</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log（引擎日志，外部存储）===\n</string>
+    <string name="logviewer_stderr_log_absent">（不存在 —— 引擎的 main() 尚未启动，或外部存储不可用）</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log（上一次会话）===\n</string>
+    <string name="logviewer_prev_log_absent">（不存在）</string>
+    <string name="logviewer_dialog_clear_title">清除日志</string>
+    <string name="logviewer_dialog_clear_message">删除崩溃日志和引擎日志文件？此操作无法撤销。</string>
+    <string name="logviewer_dialog_clear_confirm">清除</string>
+    <string name="logviewer_dialog_clear_cancel">取消</string>
+    <string name="logviewer_toast_cleared">日志已清除。</string>
+    <string name="logviewer_share_subject">GeneralsZH Android 日志</string>
+    <string name="logviewer_share_chooser_title">分享日志</string>
+    <string name="logviewer_toast_share_failed">无法准备要分享的日志文件：%1$s</string>
+    <string name="logviewer_read_failed">（无法读取 %1$s：%2$s）</string>
+    <string name="logviewer_truncated_notice">...（已截断，显示末尾部分）...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">GeneralsOnline 账号</string>
+    <string name="online_subtitle">登录以使用在线多人游戏（playgenerals.online）</string>
+    <string name="online_button_sign_out">退出登录</string>
+    <string name="online_card_sign_in">登录</string>
+    <string name="online_signin_help">点击"登录"。第一次点击时可能会要求将此应用从电池优化中排除——请允许该请求，然后返回并再次点击"登录"。之后会打开一个浏览器，跳转到 playgenerals.online，并已附带此设备的一次性代码。在网页上选择 Steam、Discord 或 GameReplays，然后返回本应用即可；登录过程会自动完成。</string>
+    <string name="online_button_sign_in">登录</string>
+    <string name="online_status_signing_in">正在登录……</string>
+    <string name="online_status_battery_opt">请在下一个界面中允许 GeneralsZH 在后台运行，然后返回并再次点击"登录"——否则 Android 可能会在你使用浏览器期间中止登录检查。</string>
+    <string name="online_toast_no_browser">没有可用的浏览器：%1$s</string>
+    <string name="online_status_continue_browser">请在浏览器中继续操作——登录完成后返回此处。</string>
+    <string name="online_status_network_error">网络错误——请检查连接后重试。</string>
+    <string name="online_toast_signed_in_as">已登录为 %1$s</string>
+    <string name="online_status_signin_failed">登录失败或已取消——点击"登录"重试。</string>
+    <string name="online_status_timed_out">等待超时——点击"登录"重试。</string>
+    <string name="online_status_unexpected">收到意外响应——点击"登录"重试。</string>
+    <string name="online_toast_signed_out">已退出登录。</string>
+    <string name="online_status_signed_in_as">已登录为 %1$s。</string>
+    <string name="online_status_not_signed_in">未登录。</string>
+</resources>

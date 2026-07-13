@@ -258,9 +258,12 @@ static void FilterPipeWireOpenAL()
  *
  * The Setup app (SetupActivity.java) writes <internalPath>/custom_driver.cfg
  * (one line: the driver .so's soname) and unpacks the driver itself into
- * <internalPath>/custom_driver/ when the user imports one via its "Custom
- * Vulkan Driver" section; both are absent by default, in which case this is
- * a no-op and the stock vendor driver loads exactly as before.
+ * <internalPath>/custom_driver/ -- either because the user imported one via
+ * its "Custom Vulkan Driver" section, or because
+ * applyRecommendedDriverIfNeeded() auto-selected the bundled Turnip build
+ * for an Adreno phone whose stock driver reports less than Vulkan 1.3. Both
+ * files are absent when neither applies, in which case this is a no-op and
+ * the stock vendor driver loads exactly as before.
  *
  * Adreno-only: Turnip has no Mali backend, so this cannot help phones whose
  * GPU is Mali (see the Mali-G76 case documented further down this file) --
@@ -682,6 +685,37 @@ int main(int argc, char* argv[])
 		}
 		if (!didChdir) {
 			fprintf(stderr, "WARNING: could not enter game data directory (external storage unavailable?)\n");
+		}
+
+		// GeneralsX @feature Android port 13/07/2026 Game DATA language
+		// override (separate from the launcher's own UI language, see
+		// LocaleHelper.java): SetupActivity.applyGameLanguageOverride()
+		// writes <internal>/game_language.cfg (one line: the engine's
+		// lowercase language token, e.g. "german") only after confirming
+		// data/<token>/generals.csf actually exists in the selected game
+		// folder -- so this never forces a language the user doesn't
+		// actually own retail/licensed data for. GetRegistryLanguage()
+		// (registry.cpp) checks CNC_ZH_LANGUAGE before the registry.ini
+		// file or BIG-file auto-detect, so this must be exported before
+		// any engine subsystem reads it.
+		if (internalPath != nullptr) {
+			char langMarkerPath[1024];
+			snprintf(langMarkerPath, sizeof(langMarkerPath), "%s/game_language.cfg", internalPath);
+			FILE *langMarker = fopen(langMarkerPath, "r");
+			if (langMarker != nullptr) {
+				char lang[64] = {0};
+				if (fgets(lang, sizeof(lang), langMarker) != nullptr) {
+					size_t len = strlen(lang);
+					while (len > 0 && (lang[len - 1] == '\n' || lang[len - 1] == '\r')) {
+						lang[--len] = '\0';
+					}
+					if (len > 0) {
+						setenv("CNC_ZH_LANGUAGE", lang, 1);
+						fprintf(stderr, "INFO: Game data language override: %s\n", lang);
+					}
+				}
+				fclose(langMarker);
+			}
 		}
 
 		// Seed default settings on first run (full detail instead of the 2003

@@ -62,6 +62,10 @@ on:
         type: boolean
         description: "Also publish a GitHub Release for this build (tag = v<version_name>). Requires version_name above to be set."
         default: false
+      release_notes:
+        type: string
+        description: "Optional custom text for the top of the release description (auto-generated commit/PR notes are still appended below it)."
+        default: ""
 
 jobs:
   build-android:
@@ -419,6 +423,7 @@ jobs:
         with:
           tag_name: v${{ inputs.version_name }}
           name: v${{ inputs.version_name }}
+          body: ${{ inputs.release_notes }}
           files: ${{ steps.locate.outputs.path }}
           generate_release_notes: true
           make_latest: true

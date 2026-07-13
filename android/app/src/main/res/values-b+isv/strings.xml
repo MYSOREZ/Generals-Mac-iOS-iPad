@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">Otkazati</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">Nastojenja GeneralsZH</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">Nastojenja Android</string>
+    <string name="setup_fallback_warning">Normalny interfejs nastojenj ne uspěl zagruziti sę (%1$s). Pokazan jest prosty zapasny interfejs, aby ty vsjedno mogl dostupiti do logov/papky igry.</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">Papka igry</string>
+    <string name="setup_button_select_game_folder">Izbrati papku igry</string>
+    <string name="setup_button_launch_game">Spustiti igru</string>
+    <string name="setup_button_view_logs">Prokazati logi</string>
+    <string name="setup_button_clear_game_folder">Izbrisati nastojenje papky igry</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">Papka igry: ne nastojena.\n</string>
+    <string name="setup_status_folder_line">Papka igry: %1$s\n</string>
+    <string name="setup_status_folder_valid">Status: vygledaje validno (najdene sut datoteky arhiva igry).\n</string>
+    <string name="setup_status_folder_invalid">Status: ta papka NE sodrži očekivane INIZH.big / INI.big — prověri, či ty izbral pravilnu papku.\n</string>
+    <string name="setup_status_logs_note">Logi padu/jadra sut v privatnom skladišču aplikacije i dostupni tolko čerez \"Prokazati logi\" vyše — Android namerno skryva jih od normalnyh upravitelev datotek (to jest standardny Android peskovnik, ne osobitost sej aplikacije).</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">Jezyk</string>
+    <string name="setup_language_help">Měnji jezyk sej aplikacije nastojenj, prokazyvača logov i izbirača papky. Za německy, špansky, kitajsky i rusky jezyk takože pěreključa tekst same igry — no tolko jestli vaša papka igry děistvitělno sodrži dane za tyj jezyk (data/&lt;jezyk&gt;/generals.csf); ta aplikacija nikogda sama ne dava ili ne izmyšlja tekst igry. Za druge jezyky tekst igry ostaje netaknuty. \"Sistemny\" sledi jezyku vašego telefona, s otkazom na anglijsky, jestli on ne jest v spisku.</string>
+    <string name="setup_language_status">Jezyk: %1$s</string>
+    <string name="setup_button_change_language">Změniti jezyk</string>
+    <string name="setup_language_dialog_title">Izberi jezyk</string>
+    <string name="setup_language_system_default">Sistemny</string>
+    <string name="setup_language_game_status_default">Tekst igry: ne zatronuty tym nastojenjem (upotrěbjaje sobstveny jezyk igry iz registry.ini, ili anglijsky po děfoltu).</string>
+    <string name="setup_language_game_status_override">Tekst igry: takože pěreključen (najdeny data/%1$s/generals.csf v papce igry).</string>
+    <string name="setup_language_game_status_missing">Tekst igry: NE pěreključen — v papce igry ne jest data/%1$s/generals.csf, tako igra sohranjaje svoj jezyk.</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">Věličina teksta menija</string>
+    <string name="setup_text_size_label">Měrilo: %1$d%%</string>
+    <string name="setup_button_apply_text_size">Naložiti věličinu teksta</string>
+    <string name="setup_text_size_help">Měri věličinu teksta bolšiny ključev/oznak menija po ekranovoj rezoluciji. 70 jest sobstvena děfoltna věličina igry; věće hodnoty čine tekst menija bolšim. Dějstvuje pri sledujućem spuštěniju igry, ne odmah.</string>
+    <string name="setup_toast_text_size_saved">Sohranjeno. Dějstvovati bude pri sledujućem spuštěniju igry.</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">Sobstveny Vulkan draiver (za napredne, tolko Adreno GPU)</string>
+    <string name="setup_button_import_driver">Importovati draiver (.zip)</string>
+    <string name="setup_button_reset_driver">Vrnuti na preporučeny</string>
+    <string name="setup_driver_help">Zagružaje Vulkan draiver (sborku Mesa Turnip) město vgrajenogo v telefon — ista tehnika, kotoru upotrěbjaju Winlator i AetherSX2. To može pozvoliti někotorym telefonam s Qualcomm Adreno spustiti igru, daže jestli jihny standardny draiver podderživaje samo Vulkan 1.1/1.2 (DXVK trěbuje 1.3). Na prigodnom telefonu Adreno to jest naloženo avtomatično — \"Vrnuti na preporučeny\" vraća tu avtomatičnu izbor pošto ste importovali čto drugo.\n\nTo NE pomože Mali, PowerVR ili drugim ne-Adreno GPU — na jih ta opcija ne dějstvuje, za njih ne jest ekvivalenta.\n\n\"Importovati draiver\" pozvoljaje zaměniti avtomatičnu izbor svojim .zip vo formatě adrenotools (naprimer, od K11MCH1/AdrenoToolsDrivers ili The412Banner/Banners-Turnip na GitHub). Dějstvuje pri sledujućem spuštěniju, ne odmah.</string>
+    <string name="setup_driver_status_none">Sobstveny draiver ne aktivny — upotrěbjaje sę vgrajeny Vulkan draiver telefona.</string>
+    <string name="setup_driver_status_auto">Preporučeny draiver (izbran avtomatično za tu děvicu): %1$s</string>
+    <string name="setup_driver_status_manual">Sobstveny draiver (importovan ručno): %1$s</string>
+    <string name="setup_driver_unknown">(nepoznato)</string>
+    <string name="setup_toast_no_file_picker">Ne jest dostupny izbirač datotek: %1$s</string>
+    <string name="setup_toast_reset_auto">Vrnjenje izvršeno. Preporučeny draiver za tu děvicu jest znova naložen.</string>
+    <string name="setup_toast_reset_stock">Vrnjenje izvršeno. Bude upotrěbjeny vgrajeny Vulkan draiver telefona.</string>
+    <string name="setup_toast_driver_import_no_tmp">Ne uspělo storiti radnu papku za import draivera</string>
+    <string name="setup_toast_driver_import_failed">Import ne uspěl: %1$s</string>
+    <string name="setup_toast_driver_import_no_meta">Import ne uspěl: meta.json ne najden vo .zip (to ne jest validny paket draivera vo formatě adrenotools)</string>
+    <string name="setup_toast_driver_import_bad_meta">Import ne uspěl: nevalidny meta.json (%1$s)</string>
+    <string name="setup_toast_driver_import_no_finalize">Import ne uspěl: ne uspělo zaveršiti papku draivera</string>
+    <string name="setup_toast_driver_config_failed">Ne uspělo sohraniti konfiguraciju draivera: %1$s</string>
+    <string name="setup_toast_driver_imported">Draiver importovan: %1$s. Dějstvovati bude pri sledujućem spuštěniju.</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">Onlajn multiigra</string>
+    <string name="setup_button_online_account">Konto GeneralsOnline</string>
+    <string name="setup_online_signed_in">Vy sut prijaveni kako %1$s.</string>
+    <string name="setup_online_signed_out">Prijava ne izvršena — trěbovana za onlajn igry.</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">Kako to dějstvuje</string>
+    <string name="setup_how_it_works_body">1. \"Izbrati papku igry\" otvorjaje pregledovatelj papok v pamjati vašego telefona. Idi tamo, kde ste kopirovali svoju sobstvenu instalaciju Command &amp; Conquer Generals Zero Hour (papku sodrživšu INIZH.big, Data\\, ZH_Generals\\ itd.) i klikni \"Upotrěbiti tu papku\".\n\n2. Jestli spisok vygledaje prazny, Android snačala prosi dozvolu \"Dostup ko vsim datotekam\" — daj ju na ekranu, kotory sę otvorja (to jest normalna dozvola Android, root ne trěbuje sę).\n\n3. \"Prokazati logi\" pokazuje log jadra i, jestli igra padla, log padu — bez komputera ili adb. Upotrěbi tam gumb \"Poděliti sę\", aby poslati log sebě.\n\n4. \"Spustiti igru\" spuštaje igru s izbranu papku.</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">Daj dozvolu \"Pozvoliti dostup ko upravjenju vsimi datotekami\" na sledujućem ekranu, potom vrni sę i znova klikni Izbrati papku igry.</string>
+    <string name="setup_toast_folder_saved">Papka igry sohranjena.</string>
+    <string name="setup_toast_folder_saved_invalid">Sohranjeno, no INIZH.big/INI.big tam ne najdeny — prověri papku.</string>
+    <string name="setup_toast_marker_save_failed">Ne uspělo sohraniti marker papky: %1$s</string>
+    <string name="setup_toast_folder_cleared">Izbrisano. Igra bude upotrěbjati svoju děfoltnu papku.</string>
+    <string name="setup_toast_options_dir_failed">Ne uspělo storiti papku za Options.ini</string>
+    <string name="setup_toast_options_save_failed">Ne uspělo sohraniti Options.ini: %1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">Izbor papky igry</string>
+    <string name="folderpicker_up_entry">⬆️  .. (gore)</string>
+    <string name="folderpicker_button_use">Upotrěbiti tu papku</string>
+    <string name="folderpicker_hint_valid">✓ Ta papka sodrži INIZH.big/INI.big — vygledaje pravilno.</string>
+    <string name="folderpicker_hint_invalid">Idi v papku igry i klikni \"Upotrěbiti tu papku\".</string>
+    <string name="folderpicker_toast_cant_read">Ne uspěvaje sę čtenje tej papky. Jestli spiski vsjude vygledaju prazni, snačala daj \"Dostup ko vsim datotekam\" na ekranu Nastojenj.</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">Logi</string>
+    <string name="logviewer_button_clear">Izbrisati logi</string>
+    <string name="logviewer_button_copy">Kopirovati</string>
+    <string name="logviewer_button_share">Poděliti sę</string>
+    <string name="logviewer_toast_copied">Kopirovano v mežuskladišče.</string>
+    <string name="logviewer_section_crash_log">=== crash.log (nativny obradnik padu, vnutrěšnje skladišče) ===\n</string>
+    <string name="logviewer_crash_log_absent">(ne prisutny — nijeden nativny pad ne zapisan od instalacije, ili aplikacija nikada ne byla spuštena dalje zagruzky biblioteky)</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log (log jadra, vnějšnje skladišče) ===\n</string>
+    <string name="logviewer_stderr_log_absent">(ne prisutny — main() jadra ješče ne spuščeny, ili vnějšnje skladišče ne dostupno)</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log (prědhodna sesija) ===\n</string>
+    <string name="logviewer_prev_log_absent">(ne prisutny)</string>
+    <string name="logviewer_dialog_clear_title">Izbrisati logi</string>
+    <string name="logviewer_dialog_clear_message">Izbrisati datoteky loga padu i loga jadra? To ne može biti otvrnjeno.</string>
+    <string name="logviewer_dialog_clear_confirm">Izbrisati</string>
+    <string name="logviewer_dialog_clear_cancel">Otkazati</string>
+    <string name="logviewer_toast_cleared">Logi izbrisani.</string>
+    <string name="logviewer_share_subject">Log GeneralsZH Android</string>
+    <string name="logviewer_share_chooser_title">Poděliti log</string>
+    <string name="logviewer_toast_share_failed">Ne uspělo prigotoviti datoteku loga za dělenje: %1$s</string>
+    <string name="logviewer_read_failed">(ne uspělo pročitati %1$s: %2$s)</string>
+    <string name="logviewer_truncated_notice">...(skraćeno, pokazan jest konec)...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">Konto GeneralsOnline</string>
+    <string name="online_subtitle">Prijavi sę za onlajn multiigru (playgenerals.online)</string>
+    <string name="online_button_sign_out">Odjaviti sę</string>
+    <string name="online_card_sign_in">Prijava</string>
+    <string name="online_signin_help">Klikni Prijaviti sę. Prvy klik može prositi izbaviti tu aplikaciju od optimizacije bateriji — dopusti to, potom vrni sę i znova klikni Prijaviti sę. Potom sę otvorja brauzer na playgenerals.online, već nosivši jednorazovy kod za tu děvicu. Izberi tam Steam, Discord ili GameReplays, potom prosto vrni sę v tu aplikaciju — prijava sę zaveršaje sama.</string>
+    <string name="online_button_sign_in">Prijaviti sę</string>
+    <string name="online_status_signing_in">Prijavjuje sę...</string>
+    <string name="online_status_battery_opt">Dopusti GeneralsZH rabotiti na zadnem planě na sledujućem ekranu, potom vrni sę i znova klikni Prijaviti sę — inako Android može prekinuti prověrku prijavy, dokel ty sut v brauzeru.</string>
+    <string name="online_toast_no_browser">Ne jest dostupny brauzer: %1$s</string>
+    <string name="online_status_continue_browser">Prodolži v svojem brauzeru — vrni sę sjuda, kogda sę prijaviš.</string>
+    <string name="online_status_network_error">Grěška sětje — prověri svoje spojenje i pokušaj znova.</string>
+    <string name="online_toast_signed_in_as">Prijavjeny kako %1$s</string>
+    <string name="online_status_signin_failed">Prijava ne uspěla ili byla otkazana — klikni Prijaviti sę, aby pokušati znova.</string>
+    <string name="online_status_timed_out">Vrěmja čekanja izčrpano — klikni Prijaviti sę, aby pokušati znova.</string>
+    <string name="online_status_unexpected">Neočekivany otvět — klikni Prijaviti sę, aby pokušati znova.</string>
+    <string name="online_toast_signed_out">Odjavjeny.</string>
+    <string name="online_status_signed_in_as">Prijavjeny kako %1$s.</string>
+    <string name="online_status_not_signed_in">Ne prijavjeny.</string>
+</resources>

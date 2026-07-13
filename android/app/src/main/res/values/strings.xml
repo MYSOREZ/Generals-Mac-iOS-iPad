@@ -1,4 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">Cancel</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">GeneralsZH Settings</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">Android Settings</string>
+    <string name="setup_fallback_warning">The normal Settings UI failed to load (%1$s). Showing a basic fallback so you can still get to your logs/game folder.</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">Game Folder</string>
+    <string name="setup_button_select_game_folder">Select Game Folder</string>
+    <string name="setup_button_launch_game">Launch Game</string>
+    <string name="setup_button_view_logs">View Logs</string>
+    <string name="setup_button_clear_game_folder">Clear Game Folder Setting</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">Game folder: not set.\n</string>
+    <string name="setup_status_folder_line">Game folder: %1$s\n</string>
+    <string name="setup_status_folder_valid">Status: looks valid (found game archive files).\n</string>
+    <string name="setup_status_folder_invalid">Status: this folder does NOT contain the expected INIZH.big / INI.big — double check you picked the right one.\n</string>
+    <string name="setup_status_logs_note">Crash/engine logs live in this app\'s private storage and are only reachable through \"View Logs\" above — Android hides them from normal file managers by design (this is standard Android sandboxing, not specific to this app).</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">Language</string>
+    <string name="setup_language_help">Changes the language of this Settings app and its Log Viewer / folder browser. For German, Spanish, Chinese and Russian, it also switches the game\'s own text automatically, but only if your game folder actually contains that language\'s data (data/&lt;language&gt;/generals.csf) — this app never ships or fakes game text itself, and other languages leave the game\'s own text untouched. \"System Default\" follows your phone\'s language, falling back to English if it isn\'t one of the languages listed.</string>
+    <string name="setup_language_status">Language: %1$s</string>
+    <string name="setup_button_change_language">Change Language</string>
+    <string name="setup_language_dialog_title">Choose a language</string>
+    <string name="setup_language_system_default">System Default</string>
+    <string name="setup_language_game_status_default">Game text: unaffected by this setting (uses its own data/registry.ini language, or English by default).</string>
+    <string name="setup_language_game_status_override">Game text: also switched to match (found data/%1$s/generals.csf in your game folder).</string>
+    <string name="setup_language_game_status_missing">Game text: NOT switched — no data/%1$s/generals.csf found in your game folder, so the game keeps its own language.</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">Menu Text Size</string>
+    <string name="setup_text_size_label">Scale: %1$d%%</string>
+    <string name="setup_button_apply_text_size">Apply Menu Text Size</string>
+    <string name="setup_text_size_help">Scales most menu button/label text for the screen resolution. 70 is the game\'s own default; higher values make menu text bigger. Takes effect the next time you launch the game, not live.</string>
+    <string name="setup_toast_text_size_saved">Saved. Takes effect next time you launch the game.</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">Custom Vulkan Driver (advanced, Adreno GPUs only)</string>
+    <string name="setup_button_import_driver">Import Driver (.zip)</string>
+    <string name="setup_button_reset_driver">Reset to Recommended</string>
+    <string name="setup_driver_help">Loads a Vulkan driver (a Mesa Turnip build) instead of your phone\'s built-in one, the same technique Winlator and AetherSX2 use. This can let some Qualcomm Adreno phones run the game even if their stock driver only reports Vulkan 1.1/1.2 (DXVK needs 1.3). On a qualifying Adreno phone this is applied automatically — \"Reset to Recommended\" restores that automatic choice after you\'ve imported something else.\n\nThis does NOT help Mali, PowerVR, or other non-Adreno GPUs — those are unaffected by this option, there is no equivalent for them.\n\n\"Import Driver\" lets you override the automatic choice with your own adrenotools-format driver .zip (for example from K11MCH1/AdrenoToolsDrivers or The412Banner/Banners-Turnip on GitHub). Takes effect next launch, not live.</string>
+    <string name="setup_driver_status_none">No custom driver active — using your phone\'s built-in Vulkan driver.</string>
+    <string name="setup_driver_status_auto">Recommended driver (auto-selected for this device): %1$s</string>
+    <string name="setup_driver_status_manual">Custom driver (manually imported): %1$s</string>
+    <string name="setup_driver_unknown">(unknown)</string>
+    <string name="setup_toast_no_file_picker">No file picker available: %1$s</string>
+    <string name="setup_toast_reset_auto">Reset done. The recommended driver for this device was reapplied.</string>
+    <string name="setup_toast_reset_stock">Reset done. Your phone\'s built-in Vulkan driver will be used.</string>
+    <string name="setup_toast_driver_import_no_tmp">Could not create working folder for driver import</string>
+    <string name="setup_toast_driver_import_failed">Import failed: %1$s</string>
+    <string name="setup_toast_driver_import_no_meta">Import failed: meta.json not found in the .zip (not a valid adrenotools driver package)</string>
+    <string name="setup_toast_driver_import_bad_meta">Import failed: invalid meta.json (%1$s)</string>
+    <string name="setup_toast_driver_import_no_finalize">Import failed: could not finalize driver folder</string>
+    <string name="setup_toast_driver_config_failed">Could not save driver config: %1$s</string>
+    <string name="setup_toast_driver_imported">Driver imported: %1$s. Takes effect next launch.</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">Online Multiplayer</string>
+    <string name="setup_button_online_account">GeneralsOnline Account</string>
+    <string name="setup_online_signed_in">Signed in as %1$s.</string>
+    <string name="setup_online_signed_out">Not signed in — required for online matches.</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">How this works</string>
+    <string name="setup_how_it_works_body">1. \"Select Game Folder\" opens a folder browser on your phone\'s storage. Navigate to wherever you copied your own Command &amp; Conquer Generals Zero Hour install (the folder containing INIZH.big, Data\\, ZH_Generals\\, etc.) and tap \"Use This Folder\".\n\n2. If browsing looks empty, Android is asking for the \"All files access\" permission first — grant it in the screen that opens (this is a normal Android permission, no root involved).\n\n3. \"View Logs\" shows the engine log and, if the game crashed, a native crash log — no computer or adb needed. Use the Share button there to send the log to yourself.\n\n4. \"Launch Game\" starts the game with the folder you picked.</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">Grant \"Allow access to manage all files\" on the next screen, then come back and tap Select Game Folder again.</string>
+    <string name="setup_toast_folder_saved">Game folder saved.</string>
+    <string name="setup_toast_folder_saved_invalid">Saved, but no INIZH.big/INI.big found there — check the folder.</string>
+    <string name="setup_toast_marker_save_failed">Could not save folder marker: %1$s</string>
+    <string name="setup_toast_folder_cleared">Cleared. The game will fall back to its default folder convention.</string>
+    <string name="setup_toast_options_dir_failed">Could not create Options.ini folder</string>
+    <string name="setup_toast_options_save_failed">Could not save Options.ini: %1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">Select Game Folder</string>
+    <string name="folderpicker_up_entry">⬆️  .. (up)</string>
+    <string name="folderpicker_button_use">Use This Folder</string>
+    <string name="folderpicker_hint_valid">✓ This folder contains INIZH.big/INI.big — looks correct.</string>
+    <string name="folderpicker_hint_invalid">Navigate into your game folder, then tap \"Use This Folder\".</string>
+    <string name="folderpicker_toast_cant_read">Can\'t read this folder. If browsing looks empty everywhere, grant \"All files access\" from the Setup screen first.</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">Logs</string>
+    <string name="logviewer_button_clear">Clear Logs</string>
+    <string name="logviewer_button_copy">Copy</string>
+    <string name="logviewer_button_share">Share</string>
+    <string name="logviewer_toast_copied">Copied to clipboard.</string>
+    <string name="logviewer_section_crash_log">=== crash.log (native crash handler, internal storage) ===\n</string>
+    <string name="logviewer_crash_log_absent">(not present — no native crash recorded since install, or the app has never launched past library load)</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log (engine log, external storage) ===\n</string>
+    <string name="logviewer_stderr_log_absent">(not present — the engine\'s main() has not started yet, or external storage is unavailable)</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log (previous session) ===\n</string>
+    <string name="logviewer_prev_log_absent">(not present)</string>
+    <string name="logviewer_dialog_clear_title">Clear Logs</string>
+    <string name="logviewer_dialog_clear_message">Delete the crash log and engine log files? This can\'t be undone.</string>
+    <string name="logviewer_dialog_clear_confirm">Clear</string>
+    <string name="logviewer_dialog_clear_cancel">Cancel</string>
+    <string name="logviewer_toast_cleared">Logs cleared.</string>
+    <string name="logviewer_share_subject">GeneralsZH Android log</string>
+    <string name="logviewer_share_chooser_title">Share log</string>
+    <string name="logviewer_toast_share_failed">Could not prepare log file to share: %1$s</string>
+    <string name="logviewer_read_failed">(could not read %1$s: %2$s)</string>
+    <string name="logviewer_truncated_notice">...(truncated, showing the tail)...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">GeneralsOnline Account</string>
+    <string name="online_subtitle">Sign in for online multiplayer (playgenerals.online)</string>
+    <string name="online_button_sign_out">Sign Out</string>
+    <string name="online_card_sign_in">Sign in</string>
+    <string name="online_signin_help">Tap Sign In. The first tap may ask to exempt this app from battery optimization -- allow it, then come back and tap Sign In again. A browser then opens to playgenerals.online, already carrying a one-time code for this device. Pick Steam, Discord, or GameReplays there, then just come back to this app; it finishes on its own.</string>
+    <string name="online_button_sign_in">Sign In</string>
+    <string name="online_status_signing_in">Signing in...</string>
+    <string name="online_status_battery_opt">Allow GeneralsZH to run in the background on the next screen, then come back and tap Sign In again -- otherwise Android may kill the sign-in check while you\'re in the browser.</string>
+    <string name="online_toast_no_browser">No browser available: %1$s</string>
+    <string name="online_status_continue_browser">Continue in your browser -- come back here once you\'ve signed in.</string>
+    <string name="online_status_network_error">Network error -- check your connection and try again.</string>
+    <string name="online_toast_signed_in_as">Signed in as %1$s</string>
+    <string name="online_status_signin_failed">Sign-in failed or was cancelled -- tap Sign In to try again.</string>
+    <string name="online_status_timed_out">Timed out waiting -- tap Sign In to try again.</string>
+    <string name="online_status_unexpected">Unexpected response -- tap Sign In to try again.</string>
+    <string name="online_toast_signed_out">Signed out.</string>
+    <string name="online_status_signed_in_as">Signed in as %1$s.</string>
+    <string name="online_status_not_signed_in">Not signed in.</string>
 </resources>

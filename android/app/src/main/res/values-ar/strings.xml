@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">إلغاء</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">إعدادات GeneralsZH</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">إعدادات أندرويد</string>
+    <string name="setup_fallback_warning">فشل تحميل واجهة الإعدادات العادية (%1$s). يتم عرض واجهة بديلة بسيطة حتى تتمكن من الوصول إلى السجلات/مجلد اللعبة.</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">مجلد اللعبة</string>
+    <string name="setup_button_select_game_folder">اختيار مجلد اللعبة</string>
+    <string name="setup_button_launch_game">تشغيل اللعبة</string>
+    <string name="setup_button_view_logs">عرض السجلات</string>
+    <string name="setup_button_clear_game_folder">إعادة تعيين مجلد اللعبة</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">مجلد اللعبة: غير محدد.\n</string>
+    <string name="setup_status_folder_line">مجلد اللعبة: %1$s\n</string>
+    <string name="setup_status_folder_valid">الحالة: يبدو صحيحًا (تم العثور على ملفات أرشيف اللعبة).\n</string>
+    <string name="setup_status_folder_invalid">الحالة: هذا المجلد لا يحتوي على INIZH.big / INI.big المتوقعة — تحقق من أنك اخترت المجلد الصحيح.\n</string>
+    <string name="setup_status_logs_note">سجلات الأعطال/المحرك مخزنة في التخزين الخاص بالتطبيق ولا يمكن الوصول إليها إلا عبر \"عرض السجلات\" أعلاه — يقوم أندرويد بإخفائها عمدًا عن مديري الملفات العاديين (هذا هو العزل المعتاد في أندرويد، وليس خاصية مميزة لهذا التطبيق).</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">اللغة</string>
+    <string name="setup_language_help">يغيّر هذا لغة تطبيق الإعدادات هذا وعارض السجلات ومتصفح المجلدات. بالنسبة للألمانية والإسبانية والصينية والروسية، يقوم أيضًا بتبديل نص اللعبة نفسها — ولكن فقط إذا كان مجلد اللعبة يحتوي فعليًا على بيانات تلك اللغة (data/&lt;اللغة&gt;/generals.csf)؛ هذا التطبيق لا يوفر أو يختلق نص اللعبة بنفسه أبدًا. أما بالنسبة للغات الأخرى، فلا يتأثر نص اللعبة. يتبع خيار \"افتراضي النظام\" لغة هاتفك، ويعود إلى الإنجليزية إذا لم تكن ضمن القائمة.</string>
+    <string name="setup_language_status">اللغة: %1$s</string>
+    <string name="setup_button_change_language">تغيير اللغة</string>
+    <string name="setup_language_dialog_title">اختر لغة</string>
+    <string name="setup_language_system_default">افتراضي النظام</string>
+    <string name="setup_language_game_status_default">نص اللعبة: لا يتأثر بهذا الإعداد (يُستخدم لغة اللعبة الخاصة بها من registry.ini، أو الإنجليزية افتراضيًا).</string>
+    <string name="setup_language_game_status_override">نص اللعبة: تم تبديله أيضًا (تم العثور على data/%1$s/generals.csf في مجلد اللعبة).</string>
+    <string name="setup_language_game_status_missing">نص اللعبة: لم يتم تبديله — لا يوجد data/%1$s/generals.csf في مجلد اللعبة، لذا تحتفظ اللعبة بلغتها الخاصة.</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">حجم نص القائمة</string>
+    <string name="setup_text_size_label">المقياس: %1$d%%</string>
+    <string name="setup_button_apply_text_size">تطبيق حجم نص القائمة</string>
+    <string name="setup_text_size_help">يُكبّر أو يُصغّر نص معظم أزرار/تسميات القائمة حسب دقة الشاشة. القيمة الافتراضية للعبة هي 70؛ القيم الأعلى تجعل نص القائمة أكبر. يسري المفعول عند تشغيل اللعبة في المرة القادمة، وليس فورًا.</string>
+    <string name="setup_toast_text_size_saved">تم الحفظ. سيسري المفعول في المرة القادمة التي تشغّل فيها اللعبة.</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">برنامج تشغيل Vulkan مخصص (متقدم، لمعالجات Adreno فقط)</string>
+    <string name="setup_button_import_driver">استيراد برنامج التشغيل (.zip)</string>
+    <string name="setup_button_reset_driver">إعادة التعيين إلى الموصى به</string>
+    <string name="setup_driver_help">يقوم بتحميل برنامج تشغيل Vulkan (نسخة مبنية من Mesa Turnip) بدلاً من برنامج التشغيل المدمج في هاتفك، وهي نفس التقنية التي يستخدمها Winlator و AetherSX2. قد يتيح هذا لبعض هواتف Qualcomm Adreno تشغيل اللعبة حتى لو كان برنامج التشغيل الأصلي يدعم فقط Vulkan 1.1/1.2 (بينما يحتاج DXVK إلى 1.3). على هاتف Adreno مناسب، يتم تطبيق هذا تلقائيًا — يعيد \"إعادة التعيين إلى الموصى به\" هذا الاختيار التلقائي بعد أن تكون قد استوردت شيئًا آخر.\n\nهذا لا يساعد معالجات Mali أو PowerVR أو أي معالج آخر غير Adreno — هذه المعالجات لا تتأثر بهذا الخيار، ولا يوجد بديل لها.\n\nيتيح لك \"استيراد برنامج التشغيل\" استبدال الاختيار التلقائي بملف .zip خاص بك بتنسيق adrenotools (على سبيل المثال من K11MCH1/AdrenoToolsDrivers أو The412Banner/Banners-Turnip على GitHub). يسري المفعول عند التشغيل القادم، وليس فورًا.</string>
+    <string name="setup_driver_status_none">لا يوجد برنامج تشغيل مخصص نشط — يتم استخدام برنامج تشغيل Vulkan المدمج في الهاتف.</string>
+    <string name="setup_driver_status_auto">برنامج التشغيل الموصى به (اختير تلقائيًا لهذا الجهاز): %1$s</string>
+    <string name="setup_driver_status_manual">برنامج تشغيل مخصص (مستورد يدويًا): %1$s</string>
+    <string name="setup_driver_unknown">(غير معروف)</string>
+    <string name="setup_toast_no_file_picker">لا يوجد أداة اختيار ملفات متاحة: %1$s</string>
+    <string name="setup_toast_reset_auto">تمت إعادة التعيين. تم تطبيق برنامج التشغيل الموصى به لهذا الجهاز مرة أخرى.</string>
+    <string name="setup_toast_reset_stock">تمت إعادة التعيين. سيتم استخدام برنامج تشغيل Vulkan المدمج في الهاتف.</string>
+    <string name="setup_toast_driver_import_no_tmp">تعذر إنشاء مجلد العمل لاستيراد برنامج التشغيل</string>
+    <string name="setup_toast_driver_import_failed">فشل الاستيراد: %1$s</string>
+    <string name="setup_toast_driver_import_no_meta">فشل الاستيراد: لم يتم العثور على meta.json داخل ملف .zip (ليست حزمة برنامج تشغيل adrenotools صالحة)</string>
+    <string name="setup_toast_driver_import_bad_meta">فشل الاستيراد: ملف meta.json غير صالح (%1$s)</string>
+    <string name="setup_toast_driver_import_no_finalize">فشل الاستيراد: تعذر إنهاء مجلد برنامج التشغيل</string>
+    <string name="setup_toast_driver_config_failed">تعذر حفظ إعدادات برنامج التشغيل: %1$s</string>
+    <string name="setup_toast_driver_imported">تم استيراد برنامج التشغيل: %1$s. سيسري المفعول عند التشغيل القادم.</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">اللعب الجماعي عبر الإنترنت</string>
+    <string name="setup_button_online_account">حساب GeneralsOnline</string>
+    <string name="setup_online_signed_in">تم تسجيل الدخول باسم %1$s.</string>
+    <string name="setup_online_signed_out">لم يتم تسجيل الدخول — مطلوب لمباريات الإنترنت.</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">كيف يعمل هذا</string>
+    <string name="setup_how_it_works_body">1. يفتح \"اختيار مجلد اللعبة\" متصفح مجلدات في تخزين هاتفك. انتقل إلى المكان الذي نسخت فيه تثبيت Command &amp; Conquer Generals Zero Hour الخاص بك (المجلد الذي يحتوي على INIZH.big وData\\ وZH_Generals\\ وغيرها) واضغط على \"استخدام هذا المجلد\".\n\n2. إذا بدت القائمة فارغة، فإن أندرويد يطلب أولًا إذن \"الوصول إلى إدارة جميع الملفات\" — امنحه في الشاشة التي تفتح (هذا إذن عادي في أندرويد، لا يتطلب صلاحيات الروت).\n\n3. يعرض \"عرض السجلات\" سجل المحرك، وإذا تعطلت اللعبة، سجل عطل أصلي — دون الحاجة إلى حاسوب أو adb. استخدم زر المشاركة هناك لإرسال السجل إلى نفسك.\n\n4. يبدأ \"تشغيل اللعبة\" اللعبة باستخدام المجلد الذي اخترته.</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">امنح إذن \"السماح بالوصول لإدارة جميع الملفات\" في الشاشة التالية، ثم عد واضغط على اختيار مجلد اللعبة مرة أخرى.</string>
+    <string name="setup_toast_folder_saved">تم حفظ مجلد اللعبة.</string>
+    <string name="setup_toast_folder_saved_invalid">تم الحفظ، لكن لم يتم العثور على INIZH.big/INI.big هناك — تحقق من المجلد.</string>
+    <string name="setup_toast_marker_save_failed">تعذر حفظ علامة المجلد: %1$s</string>
+    <string name="setup_toast_folder_cleared">تمت إعادة التعيين. ستستخدم اللعبة مجلدها الافتراضي.</string>
+    <string name="setup_toast_options_dir_failed">تعذر إنشاء مجلد لملف Options.ini</string>
+    <string name="setup_toast_options_save_failed">تعذر حفظ Options.ini: %1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">اختيار مجلد اللعبة</string>
+    <string name="folderpicker_up_entry">⬆️  .. (للأعلى)</string>
+    <string name="folderpicker_button_use">استخدام هذا المجلد</string>
+    <string name="folderpicker_hint_valid">✓ يحتوي هذا المجلد على INIZH.big/INI.big — يبدو صحيحًا.</string>
+    <string name="folderpicker_hint_invalid">انتقل إلى مجلد اللعبة، ثم اضغط على \"استخدام هذا المجلد\".</string>
+    <string name="folderpicker_toast_cant_read">تعذر قراءة هذا المجلد. إذا بدت القوائم فارغة في كل مكان، امنح أولًا إذن \"الوصول إلى جميع الملفات\" من شاشة الإعدادات.</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">السجلات</string>
+    <string name="logviewer_button_clear">مسح السجلات</string>
+    <string name="logviewer_button_copy">نسخ</string>
+    <string name="logviewer_button_share">مشاركة</string>
+    <string name="logviewer_toast_copied">تم النسخ إلى الحافظة.</string>
+    <string name="logviewer_section_crash_log">=== crash.log (معالج الأعطال الأصلي، التخزين الداخلي) ===\n</string>
+    <string name="logviewer_crash_log_absent">(غير موجود — لم يُسجَّل أي عطل أصلي منذ التثبيت، أو أن التطبيق لم يُشغَّل قط بعد تحميل المكتبة)</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log (سجل المحرك، التخزين الخارجي) ===\n</string>
+    <string name="logviewer_stderr_log_absent">(غير موجود — لم يبدأ main() الخاص بالمحرك بعد، أو أن التخزين الخارجي غير متاح)</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log (الجلسة السابقة) ===\n</string>
+    <string name="logviewer_prev_log_absent">(غير موجود)</string>
+    <string name="logviewer_dialog_clear_title">مسح السجلات</string>
+    <string name="logviewer_dialog_clear_message">هل تريد حذف ملف سجل الأعطال وملفات سجل المحرك؟ لا يمكن التراجع عن هذا.</string>
+    <string name="logviewer_dialog_clear_confirm">مسح</string>
+    <string name="logviewer_dialog_clear_cancel">إلغاء</string>
+    <string name="logviewer_toast_cleared">تم مسح السجلات.</string>
+    <string name="logviewer_share_subject">سجل GeneralsZH Android</string>
+    <string name="logviewer_share_chooser_title">مشاركة السجل</string>
+    <string name="logviewer_toast_share_failed">تعذر تجهيز ملف السجل للمشاركة: %1$s</string>
+    <string name="logviewer_read_failed">(تعذرت قراءة %1$s: %2$s)</string>
+    <string name="logviewer_truncated_notice">...(تم الاقتصاص، ويُعرض الجزء الأخير)...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">حساب GeneralsOnline</string>
+    <string name="online_subtitle">سجّل الدخول للعب الجماعي عبر الإنترنت (playgenerals.online)</string>
+    <string name="online_button_sign_out">تسجيل الخروج</string>
+    <string name="online_card_sign_in">تسجيل الدخول</string>
+    <string name="online_signin_help">اضغط على "تسجيل الدخول". قد تطلب منك الضغطة الأولى استثناء هذا التطبيق من تحسين البطارية — اسمح بذلك، ثم عد واضغط على "تسجيل الدخول" مرة أخرى. سيفتح بعد ذلك متصفح على playgenerals.online يحمل بالفعل رمزًا لمرة واحدة لهذا الجهاز. اختر هناك Steam أو Discord أو GameReplays، ثم عد فقط إلى هذا التطبيق؛ ستنتهي العملية من تلقاء نفسها.</string>
+    <string name="online_button_sign_in">تسجيل الدخول</string>
+    <string name="online_status_signing_in">جارٍ تسجيل الدخول...</string>
+    <string name="online_status_battery_opt">اسمح لتطبيق GeneralsZH بالعمل في الخلفية في الشاشة التالية، ثم عد واضغط على "تسجيل الدخول" مرة أخرى — وإلا فقد يوقف أندرويد عملية التحقق من تسجيل الدخول أثناء وجودك في المتصفح.</string>
+    <string name="online_toast_no_browser">لا يوجد متصفح متاح: %1$s</string>
+    <string name="online_status_continue_browser">تابع في متصفحك — عد إلى هنا بمجرد تسجيل الدخول.</string>
+    <string name="online_status_network_error">خطأ في الشبكة — تحقق من اتصالك وحاول مرة أخرى.</string>
+    <string name="online_toast_signed_in_as">تم تسجيل الدخول باسم %1$s</string>
+    <string name="online_status_signin_failed">فشل تسجيل الدخول أو تم إلغاؤه — اضغط على "تسجيل الدخول" للمحاولة مرة أخرى.</string>
+    <string name="online_status_timed_out">انتهت مهلة الانتظار — اضغط على "تسجيل الدخول" للمحاولة مرة أخرى.</string>
+    <string name="online_status_unexpected">استجابة غير متوقعة — اضغط على "تسجيل الدخول" للمحاولة مرة أخرى.</string>
+    <string name="online_toast_signed_out">تم تسجيل الخروج.</string>
+    <string name="online_status_signed_in_as">تم تسجيل الدخول باسم %1$s.</string>
+    <string name="online_status_not_signed_in">لم يتم تسجيل الدخول.</string>
+</resources>

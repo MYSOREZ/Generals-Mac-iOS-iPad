@@ -49,6 +49,7 @@
         android:isGame="true"
         android:appCategory="game"
         android:hardwareAccelerated="true"
+        android:supportsRtl="true"
         android:requestLegacyExternalStorage="false">
 
         <activity
@@ -85,7 +86,7 @@
         <activity
             android:name=".SetupActivity"
             android:exported="true"
-            android:label="GeneralsZH Settings"
+            android:label="@string/setup_window_title"
             android:icon="@mipmap/ic_launcher_setup"
             android:theme="@style/Theme.GeneralsZHSettings"
             android:screenOrientation="landscape"

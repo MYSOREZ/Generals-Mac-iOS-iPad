@@ -60,9 +60,14 @@ public class FolderPickerActivity extends Activity {
     private ListView listView;
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle("Select Game Folder");
+        setTitle(R.string.folderpicker_title);
 
         File start = Environment.getExternalStorageDirectory();
         currentDir = (start != null && start.isDirectory()) ? start : new File("/storage/emulated/0");
@@ -89,14 +94,14 @@ public class FolderPickerActivity extends Activity {
         buttonRow.setPadding(dp(8), dp(8), dp(8), dp(8));
 
         Button useButton = new Button(this);
-        useButton.setText("Use This Folder");
+        useButton.setText(R.string.folderpicker_button_use);
         useButton.setOnClickListener(v -> finishWithSelection());
-        buttonRow.addView(useButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        buttonRow.addView(useButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         Button cancelButton = new Button(this);
-        cancelButton.setText("Cancel");
+        cancelButton.setText(R.string.common_cancel);
         cancelButton.setOnClickListener(v -> { setResult(RESULT_CANCELED); finish(); });
-        buttonRow.addView(cancelButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        buttonRow.addView(cancelButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         root.addView(buttonRow);
         setContentView(root);
@@ -104,7 +109,7 @@ public class FolderPickerActivity extends Activity {
 
         listView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
             String name = (String) parent.getItemAtPosition(position);
-            if ("⬆️  .. (up)".equals(name)) {
+            if (getString(R.string.folderpicker_up_entry).equals(name)) {
                 File parentDir = currentDir.getParentFile();
                 if (parentDir != null && parentDir.canRead()) {
                     currentDir = parentDir;
@@ -125,12 +130,12 @@ public class FolderPickerActivity extends Activity {
     private void refresh() {
         pathLabel.setText(currentDir.getAbsolutePath());
         hintLabel.setText(SetupActivity.isValidGameFolder(currentDir)
-            ? "✓ This folder contains INIZH.big/INI.big — looks correct."
-            : "Navigate into your game folder, then tap \"Use This Folder\".");
+            ? getString(R.string.folderpicker_hint_valid)
+            : getString(R.string.folderpicker_hint_invalid));
 
         List<String> entries = new ArrayList<>();
         if (currentDir.getParentFile() != null) {
-            entries.add("⬆️  .. (up)");
+            entries.add(getString(R.string.folderpicker_up_entry));
         }
         File[] children = currentDir.listFiles();
         if (children != null) {
@@ -145,10 +150,7 @@ public class FolderPickerActivity extends Activity {
                 entries.add(d.getName());
             }
         } else {
-            Toast.makeText(this,
-                "Can't read this folder. If browsing looks empty everywhere, "
-                + "grant \"All files access\" from the Setup screen first.",
-                Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.folderpicker_toast_cant_read, Toast.LENGTH_LONG).show();
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, entries);

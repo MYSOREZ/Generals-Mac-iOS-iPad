@@ -75,9 +75,14 @@ public class LogViewerActivity extends Activity {
     private String combinedLog = "";
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTitle("Logs");
+        setTitle(R.string.logviewer_title);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -86,24 +91,30 @@ public class LogViewerActivity extends Activity {
         buttonRow.setOrientation(LinearLayout.HORIZONTAL);
         buttonRow.setPadding(dp(8), dp(8), dp(8), dp(8));
 
+        // GeneralsX @bugfix Android port 13/07/2026 WRAP_CONTENT height let
+        // each button size to its own text independently -- fine in English,
+        // but a translation that wraps to two lines (e.g. Ukrainian
+        // "Очистити логи") made that one button taller than its siblings,
+        // breaking the row's bottom edge. MATCH_PARENT makes every button in
+        // the row stretch to the tallest sibling's height instead.
         Button clearButton = new Button(this);
-        clearButton.setText("Clear Logs");
+        clearButton.setText(R.string.logviewer_button_clear);
         clearButton.setOnClickListener(v -> confirmClearLogs());
-        buttonRow.addView(clearButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        buttonRow.addView(clearButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         Button copyButton = new Button(this);
-        copyButton.setText("Copy");
+        copyButton.setText(R.string.logviewer_button_copy);
         copyButton.setOnClickListener(v -> {
             ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-            cm.setPrimaryClip(ClipData.newPlainText("GeneralsZH log", combinedLog));
-            Toast.makeText(this, "Copied to clipboard.", Toast.LENGTH_SHORT).show();
+            cm.setPrimaryClip(ClipData.newPlainText(getString(R.string.logviewer_share_subject), combinedLog));
+            Toast.makeText(this, R.string.logviewer_toast_copied, Toast.LENGTH_SHORT).show();
         });
-        buttonRow.addView(copyButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        buttonRow.addView(copyButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         Button shareButton = new Button(this);
-        shareButton.setText("Share");
+        shareButton.setText(R.string.logviewer_button_share);
         shareButton.setOnClickListener(v -> shareLogAsFile());
-        buttonRow.addView(shareButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        buttonRow.addView(shareButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
 
         root.addView(buttonRow);
 
@@ -131,19 +142,19 @@ public class LogViewerActivity extends Activity {
         StringBuilder sb = new StringBuilder();
 
         File crashLog = new File(getFilesDir(), "crash.log");
-        sb.append("=== crash.log (native crash handler, internal storage) ===\n");
-        sb.append(crashLog.exists() ? readTail(crashLog) : "(not present — no native crash recorded since install, or the app has never launched past library load)");
+        sb.append(getString(R.string.logviewer_section_crash_log));
+        sb.append(crashLog.exists() ? readTail(crashLog) : getString(R.string.logviewer_crash_log_absent));
         sb.append("\n\n");
 
         File extDir = getExternalFilesDir(null);
         File stderrLog = extDir != null ? new File(extDir, "generals-stderr.log") : null;
-        sb.append("=== generals-stderr.log (engine log, external storage) ===\n");
-        sb.append(stderrLog != null && stderrLog.exists() ? readTail(stderrLog) : "(not present — the engine's main() has not started yet, or external storage is unavailable)");
+        sb.append(getString(R.string.logviewer_section_stderr_log));
+        sb.append(stderrLog != null && stderrLog.exists() ? readTail(stderrLog) : getString(R.string.logviewer_stderr_log_absent));
         sb.append("\n\n");
 
         File prevLog = extDir != null ? new File(extDir, "generals-stderr-prev.log") : null;
-        sb.append("=== generals-stderr-prev.log (previous session) ===\n");
-        sb.append(prevLog != null && prevLog.exists() ? readTail(prevLog) : "(not present)");
+        sb.append(getString(R.string.logviewer_section_prev_log));
+        sb.append(prevLog != null && prevLog.exists() ? readTail(prevLog) : getString(R.string.logviewer_prev_log_absent));
 
         combinedLog = sb.toString();
         logText().setText(combinedLog);
@@ -151,10 +162,10 @@ public class LogViewerActivity extends Activity {
 
     private void confirmClearLogs() {
         new AlertDialog.Builder(this)
-            .setTitle("Clear Logs")
-            .setMessage("Delete the crash log and engine log files? This can't be undone.")
-            .setPositiveButton("Clear", (dialog, which) -> clearLogs())
-            .setNegativeButton("Cancel", null)
+            .setTitle(R.string.logviewer_dialog_clear_title)
+            .setMessage(R.string.logviewer_dialog_clear_message)
+            .setPositiveButton(R.string.logviewer_dialog_clear_confirm, (dialog, which) -> clearLogs())
+            .setNegativeButton(R.string.logviewer_dialog_clear_cancel, null)
             .show();
     }
 
@@ -166,7 +177,7 @@ public class LogViewerActivity extends Activity {
             new File(extDir, "generals-stderr-prev.log").delete();
         }
         loadLogs();
-        Toast.makeText(this, "Logs cleared.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.logviewer_toast_cleared, Toast.LENGTH_SHORT).show();
     }
 
     private void shareLogAsFile() {
@@ -180,12 +191,12 @@ public class LogViewerActivity extends Activity {
 
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_SUBJECT, "GeneralsZH Android log");
+            share.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.logviewer_share_subject));
             share.putExtra(Intent.EXTRA_STREAM, uri);
             share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(share, "Share log"));
+            startActivity(Intent.createChooser(share, getString(R.string.logviewer_share_chooser_title)));
         } catch (IOException e) {
-            Toast.makeText(this, "Could not prepare log file to share: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.logviewer_toast_share_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -198,9 +209,9 @@ public class LogViewerActivity extends Activity {
             CharBuffer buf = CharBuffer.allocate(MAX_CHARS_PER_FILE);
             r.read(buf);
             buf.flip();
-            return (size > MAX_CHARS_PER_FILE ? "...(truncated, showing the tail)...\n" : "") + buf.toString();
+            return (size > MAX_CHARS_PER_FILE ? getString(R.string.logviewer_truncated_notice) : "") + buf.toString();
         } catch (IOException e) {
-            return "(could not read " + file.getAbsolutePath() + ": " + e.getMessage() + ")";
+            return getString(R.string.logviewer_read_failed, file.getAbsolutePath(), e.getMessage());
         }
     }
 

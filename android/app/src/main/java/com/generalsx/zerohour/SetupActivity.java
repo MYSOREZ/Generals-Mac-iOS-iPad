@@ -31,6 +31,9 @@ package com.generalsx.zerohour;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.FeatureInfo;
+import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -69,6 +72,11 @@ public class SetupActivity extends Activity {
     private TextView statusText;
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         // TheSuperHackers @bugfix Android port 07/07/2026 See the matching
         // comment in GeneralsZHActivity.onCreate(): reinforce the manifest's
@@ -78,7 +86,7 @@ public class SetupActivity extends Activity {
         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         super.onCreate(savedInstanceState);
-        setTitle("GeneralsZH Settings");
+        setTitle(R.string.setup_window_title);
 
         // GeneralsX @bugfix Android port 08/07/2026 This screen is the ONLY
         // way to reach "View Logs" without adb, so it must never be the thing
@@ -101,8 +109,7 @@ public class SetupActivity extends Activity {
         InsetUtil.applySafeInsets(root);
 
         TextView warning = new TextView(this);
-        warning.setText("The normal Settings UI failed to load (" + failure + "). "
-            + "Showing a basic fallback so you can still get to your logs/game folder.");
+        warning.setText(getString(R.string.setup_fallback_warning, String.valueOf(failure)));
         warning.setPadding(0, 0, 0, dp(16));
         root.addView(warning);
 
@@ -111,10 +118,10 @@ public class SetupActivity extends Activity {
         statusText.setPadding(0, 0, 0, dp(24));
         root.addView(statusText);
 
-        addButton(root, "Select Game Folder", this::onSelectGameFolder);
-        addButton(root, "View Logs", this::onViewLogs);
-        addButton(root, "Launch Game", this::onLaunchGame);
-        addButton(root, "Clear Game Folder Setting", this::onClearGameFolder);
+        addButton(root, getString(R.string.setup_button_select_game_folder), this::onSelectGameFolder);
+        addButton(root, getString(R.string.setup_button_view_logs), this::onViewLogs);
+        addButton(root, getString(R.string.setup_button_launch_game), this::onLaunchGame);
+        addButton(root, getString(R.string.setup_button_clear_game_folder), this::onClearGameFolder);
     }
 
     @Override
@@ -138,14 +145,14 @@ public class SetupActivity extends Activity {
         InsetUtil.applySafeInsets(scroll);
 
         TextView title = new TextView(this);
-        title.setText("Command & Conquer Generals: Zero Hour");
+        title.setText(R.string.setup_title);
         title.setTextSize(22);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         title.setPadding(dp(4), dp(8), dp(4), dp(4));
         root.addView(title);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Android Settings");
+        subtitle.setText(R.string.setup_subtitle);
         subtitle.setTextSize(14);
         subtitle.setAlpha(0.7f);
         subtitle.setPadding(dp(4), 0, dp(4), dp(16));
@@ -156,32 +163,141 @@ public class SetupActivity extends Activity {
         statusText.setTextIsSelectable(true);
         statusCard.addView(statusText);
 
-        LinearLayout actionsCard = startCard(root, "Game Folder");
-        addButton(actionsCard, "Select Game Folder", this::onSelectGameFolder);
-        addButton(actionsCard, "Launch Game", this::onLaunchGame);
-        addButton(actionsCard, "View Logs", this::onViewLogs);
-        addButton(actionsCard, "Clear Game Folder Setting", this::onClearGameFolder);
+        LinearLayout actionsCard = startCard(root, getString(R.string.setup_card_game_folder));
+        addButton(actionsCard, getString(R.string.setup_button_select_game_folder), this::onSelectGameFolder);
+        addButton(actionsCard, getString(R.string.setup_button_launch_game), this::onLaunchGame);
+        addButton(actionsCard, getString(R.string.setup_button_view_logs), this::onViewLogs);
+        addButton(actionsCard, getString(R.string.setup_button_clear_game_folder), this::onClearGameFolder);
 
+        buildLanguageSection(root);
         buildUiScaleSection(root);
+        applyRecommendedDriverIfNeeded();
         buildCustomDriverSection(root);
         buildGeneralsOnlineSection(root);
 
-        LinearLayout helpCard = startCard(root, "How this works");
+        LinearLayout helpCard = startCard(root, getString(R.string.setup_card_how_it_works));
         TextView help = new TextView(this);
-        help.setText(
-            "1. \"Select Game Folder\" opens a folder browser on your phone's "
-            + "storage. Navigate to wherever you copied your own Command & Conquer "
-            + "Generals Zero Hour install (the folder containing INIZH.big, Data\\, "
-            + "ZH_Generals\\, etc.) and tap \"Use This Folder\".\n\n"
-            + "2. If browsing looks empty, Android is asking for the \"All files "
-            + "access\" permission first — grant it in the screen that opens (this "
-            + "is a normal Android permission, no root involved).\n\n"
-            + "3. \"View Logs\" shows the engine log and, if the game crashed, a "
-            + "native crash log — no computer or adb needed. Use the Share button "
-            + "there to send the log to yourself.\n\n"
-            + "4. \"Launch Game\" starts the game with the folder you picked."
-        );
+        help.setText(R.string.setup_how_it_works_body);
         helpCard.addView(help);
+    }
+
+    // GeneralsX @feature Android port 13/07/2026 GitHub issue #4: in-app
+    // language override for this launcher (Setup/Log Viewer/folder browser)
+    // -- see LocaleHelper for why it's a manual attachBaseContext() wrap
+    // rather than androidx.appcompat's per-app language API, and why
+    // "System Default" needs no explicit handling.
+    private void buildLanguageSection(LinearLayout root) {
+        LinearLayout content = startCard(root, getString(R.string.setup_card_language));
+
+        TextView status = new TextView(this);
+        status.setText(getString(R.string.setup_language_status,
+            LocaleHelper.displayNameFor(this, LocaleHelper.getSavedLanguageTag(this))));
+        status.setPadding(0, 0, 0, dp(8));
+        content.addView(status);
+
+        addButton(content, getString(R.string.setup_button_change_language), this::onChangeLanguage);
+
+        gameLanguageStatusView = new TextView(this);
+        gameLanguageStatusView.setPadding(0, dp(8), 0, 0);
+        updateGameLanguageStatusView();
+        content.addView(gameLanguageStatusView);
+
+        TextView help = new TextView(this);
+        help.setAlpha(0.8f);
+        help.setText(R.string.setup_language_help);
+        content.addView(help);
+    }
+
+    // GeneralsX @feature Android port 13/07/2026 GitHub issue #4 follow-up:
+    // status line showing whether the launcher's chosen language is also
+    // being applied to the game's own text (see applyGameLanguageOverride()).
+    private TextView gameLanguageStatusView;
+
+    private void updateGameLanguageStatusView() {
+        if (gameLanguageStatusView == null) {
+            return;
+        }
+        String launcherTag = LocaleHelper.getSavedLanguageTag(this);
+        String engineToken = LocaleHelper.gameDataLanguageFor(launcherTag);
+        if (engineToken == null) {
+            gameLanguageStatusView.setText(R.string.setup_language_game_status_default);
+            return;
+        }
+        String gamePath = getSavedGamePath();
+        boolean found = gamePath != null && new File(gamePath, "data/" + engineToken + "/generals.csf").isFile();
+        gameLanguageStatusView.setText(getString(
+            found ? R.string.setup_language_game_status_override : R.string.setup_language_game_status_missing,
+            engineToken));
+    }
+
+    private void onChangeLanguage() {
+        String[] tags = LocaleHelper.SUPPORTED_TAGS;
+        String[] labels = new String[tags.length];
+        for (int i = 0; i < tags.length; i++) {
+            labels[i] = LocaleHelper.displayNameFor(this, tags[i]);
+        }
+        String currentTag = LocaleHelper.getSavedLanguageTag(this);
+        int currentIndex = 0;
+        for (int i = 0; i < tags.length; i++) {
+            if (tags[i].equals(currentTag)) {
+                currentIndex = i;
+                break;
+            }
+        }
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(R.string.setup_language_dialog_title)
+            .setSingleChoiceItems(labels, currentIndex, (dialog, which) -> {
+                LocaleHelper.setSavedLanguageTag(this, tags[which]);
+                applyGameLanguageOverride(tags[which]);
+                dialog.dismiss();
+                recreate();
+            })
+            .setNegativeButton(R.string.common_cancel, null)
+            .show();
+    }
+
+    // GeneralsX @feature Android port 13/07/2026 GitHub issue #4 follow-up:
+    // if the launcher's chosen UI language has a corresponding engine
+    // language-folder token (LocaleHelper.gameDataLanguageFor()) AND the
+    // user's own selected game folder actually has that data
+    // (data/<token>/generals.csf -- lowercase "data", matching g_csfFile
+    // in SDL3Main.cpp and the Linux case-sensitivity fix it documents), we
+    // write <filesDir>/game_language.cfg so SDL3Main.cpp exports
+    // CNC_ZH_LANGUAGE before any engine subsystem reads it
+    // (GetRegistryLanguage() in registry.cpp checks that env var first,
+    // ahead of registry.ini and the BIG-file auto-detect). If the data
+    // isn't present -- most commonly Russian, which Zero Hour never
+    // shipped officially and only exists via the user's own fan/licensed
+    // copy -- we deliberately leave the game on its own default/auto-detect
+    // rather than force a language with no text to show
+    // (GameTextManager::init() in GameText.cpp fails gracefully, blank UI
+    // text, if the CSF is missing -- silently wrong is worse than
+    // untouched). Called both when the language changes and when the game
+    // folder changes, since either one can flip the answer.
+    private void applyGameLanguageOverride(String launcherTag) {
+        File marker = new File(getFilesDir(), "game_language.cfg");
+        String engineToken = LocaleHelper.gameDataLanguageFor(launcherTag);
+        if (engineToken == null) {
+            marker.delete();
+            return;
+        }
+        String gamePath = getSavedGamePath();
+        if (gamePath == null) {
+            marker.delete();
+            return;
+        }
+        File csf = new File(gamePath, "data/" + engineToken + "/generals.csf");
+        if (!csf.isFile()) {
+            marker.delete();
+            return;
+        }
+        try (java.io.FileWriter w = new java.io.FileWriter(marker, false)) {
+            w.write(engineToken);
+            w.write("\n");
+        } catch (java.io.IOException e) {
+            // Not fatal: worst case the game just keeps its own default
+            // language, same as before this feature existed.
+        }
     }
 
     // Creates a MaterialCardView appended to `root`, with an optional bold
@@ -238,7 +354,7 @@ public class SetupActivity extends Activity {
     // "Menu Text Size" below is the one scaling option that actually works.
 
     private void buildUiScaleSection(LinearLayout root) {
-        LinearLayout content = startCard(root, "Menu Text Size");
+        LinearLayout content = startCard(root, getString(R.string.setup_card_text_size));
 
         uiScaleLabel = new TextView(this);
         content.addView(uiScaleLabel);
@@ -253,23 +369,19 @@ public class SetupActivity extends Activity {
         uiScaleSlider.addOnChangeListener((slider, value, fromUser) -> updateUiScaleLabel((int) value));
         content.addView(uiScaleSlider);
 
-        addButton(content, "Apply Menu Text Size", () -> {
+        addButton(content, getString(R.string.setup_button_apply_text_size), () -> {
             writeUiScalePercent((int) uiScaleSlider.getValue());
-            Toast.makeText(this, "Saved. Takes effect next time you launch the game.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_text_size_saved, Toast.LENGTH_LONG).show();
         });
 
         TextView uiScaleHelp = new TextView(this);
         uiScaleHelp.setAlpha(0.8f);
-        uiScaleHelp.setText(
-            "Scales most menu button/label text for the screen resolution. 70 is "
-            + "the game's own default; higher values make menu text bigger. Takes "
-            + "effect the next time you launch the game, not live."
-        );
+        uiScaleHelp.setText(R.string.setup_text_size_help);
         content.addView(uiScaleHelp);
     }
 
     private void updateUiScaleLabel(int percent) {
-        uiScaleLabel.setText("Scale: " + percent + "%");
+        uiScaleLabel.setText(getString(R.string.setup_text_size_label, percent));
     }
 
     // GeneralsX @feature Android port 10/07/2026 Optional custom Vulkan
@@ -284,45 +396,161 @@ public class SetupActivity extends Activity {
     // matching every other app that uses this technique.
     private static final String CUSTOM_DRIVER_DIR_NAME = "custom_driver";
     private static final String CUSTOM_DRIVER_CFG_NAME = "custom_driver.cfg";
+    // GeneralsX @feature Android port 13/07/2026 Marks that custom_driver.cfg
+    // was populated by applyRecommendedDriverIfNeeded() rather than by the
+    // user importing their own .zip -- lets the status text and the
+    // "reset" button distinguish "we picked this for you" from "you chose
+    // this", without changing anything on the native loading side (both
+    // cases are the same custom_driver.cfg/custom_driver/ that
+    // TryLoadCustomVulkanDriver() in SDL3Main.cpp already reads).
+    private static final String CUSTOM_DRIVER_AUTO_MARKER_NAME = "custom_driver.auto";
+    // Bundled fallback driver (staged by scripts/build/android/fetch-turnip.sh
+    // into this asset folder at build time) -- see applyRecommendedDriverIfNeeded().
+    private static final String DEFAULT_DRIVER_ASSET_DIR = "default_driver";
     private static final int REQUEST_IMPORT_DRIVER = 1002;
 
     private TextView customDriverStatusView;
 
     private void buildCustomDriverSection(LinearLayout root) {
-        LinearLayout content = startCard(root, "Custom Vulkan Driver (advanced, Adreno GPUs only)");
+        LinearLayout content = startCard(root, getString(R.string.setup_card_vulkan_driver));
 
         customDriverStatusView = new TextView(this);
         customDriverStatusView.setText(customDriverStatusText());
         customDriverStatusView.setPadding(0, 0, 0, dp(8));
         content.addView(customDriverStatusView);
 
-        addButton(content, "Import Driver (.zip)", this::onImportCustomDriver);
-        addButton(content, "Clear Custom Driver", this::onClearCustomDriver);
+        addButton(content, getString(R.string.setup_button_import_driver), this::onImportCustomDriver);
+        addButton(content, getString(R.string.setup_button_reset_driver), this::onClearCustomDriver);
 
         TextView help = new TextView(this);
         help.setAlpha(0.8f);
-        help.setText(
-            "Loads a user-supplied Vulkan driver (e.g. a Mesa Turnip build) instead "
-            + "of your phone's built-in one, the same technique Winlator and AetherSX2 "
-            + "use. This can let some Qualcomm Adreno phones run the game even if "
-            + "their stock driver only reports Vulkan 1.1/1.2 (DXVK needs 1.3).\n\n"
-            + "This does NOT help Mali, PowerVR, or other non-Adreno GPUs -- those "
-            + "are unaffected by this option, there is no equivalent for them.\n\n"
-            + "Download a Turnip driver .zip built for adrenotools/Winlator-style apps "
-            + "(for example from K11MCH1/AdrenoToolsDrivers or The412Banner/"
-            + "Banners-Turnip on GitHub) and import it here. Takes effect next launch, "
-            + "not live."
-        );
+        help.setText(R.string.setup_driver_help);
         content.addView(help);
     }
 
     private String customDriverStatusText() {
         File cfg = new File(getFilesDir(), CUSTOM_DRIVER_CFG_NAME);
         if (!cfg.isFile()) {
-            return "No custom driver imported -- using your phone's built-in Vulkan driver.";
+            return getString(R.string.setup_driver_status_none);
         }
         String driverName = readFirstLine(cfg);
-        return "Active custom driver: " + (driverName != null ? driverName : "(unknown)");
+        boolean isAuto = new File(getFilesDir(), CUSTOM_DRIVER_AUTO_MARKER_NAME).isFile();
+        String name = driverName != null ? driverName : getString(R.string.setup_driver_unknown);
+        return getString(isAuto ? R.string.setup_driver_status_auto : R.string.setup_driver_status_manual, name);
+    }
+
+    // GeneralsX @feature Android port 13/07/2026 Auto-applies the bundled
+    // Turnip driver on Adreno phones whose stock driver reports less than
+    // Vulkan 1.3, without touching anything if the user already imported
+    // their own driver or the phone doesn't need help. Called on every
+    // Setup launch (cheap no-op once satisfied) and again from
+    // onClearCustomDriver() so "reset" actually restores the recommended
+    // state instead of just going blank.
+    private void applyRecommendedDriverIfNeeded() {
+        try {
+            if (new File(getFilesDir(), CUSTOM_DRIVER_CFG_NAME).isFile()) {
+                return;  // already configured (auto or user) -- leave it alone
+            }
+            if (deviceReportsVulkan13()) {
+                return;  // stock driver already handles what DXVK needs
+            }
+            File destDir = new File(getFilesDir(), CUSTOM_DRIVER_DIR_NAME);
+            deleteRecursive(destDir);
+            if (!copyDriverAssetTree(DEFAULT_DRIVER_ASSET_DIR, destDir)) {
+                return;  // no bundled driver in this build -- nothing to apply
+            }
+            File metaFile = new File(destDir, "meta.json");
+            if (!metaFile.isFile()) {
+                deleteRecursive(destDir);
+                return;
+            }
+            String libraryName;
+            try {
+                org.json.JSONObject meta = new org.json.JSONObject(readWholeFile(metaFile));
+                libraryName = meta.optString("libraryName", "");
+            } catch (Exception e) {
+                libraryName = "";
+            }
+            if (libraryName.isEmpty() || !new File(destDir, libraryName).isFile()) {
+                deleteRecursive(destDir);
+                return;
+            }
+            File cfg = new File(getFilesDir(), CUSTOM_DRIVER_CFG_NAME);
+            try (java.io.FileWriter w = new java.io.FileWriter(cfg, false)) {
+                w.write(libraryName);
+                w.write("\n");
+            }
+            new File(getFilesDir(), CUSTOM_DRIVER_AUTO_MARKER_NAME).createNewFile();
+        } catch (Exception e) {
+            // Never let driver auto-selection take Setup down with it --
+            // worst case the phone's stock driver loads, same as before
+            // this feature existed.
+        }
+    }
+
+    // FEATURE_VULKAN_HARDWARE_VERSION's reported "version" is a Vulkan
+    // version int using the same VK_MAKE_API_VERSION encoding as the C API;
+    // VK_API_VERSION_1_3 is (1<<22)|(3<<12) = 0x00403000. No feature entry
+    // at all (some devices/emulators) is treated as "can't confirm 1.3" so
+    // the recommended driver still gets a chance to help.
+    private boolean deviceReportsVulkan13() {
+        PackageManager pm = getPackageManager();
+        FeatureInfo[] features = pm.getSystemAvailableFeatures();
+        if (features == null) {
+            return false;
+        }
+        for (FeatureInfo fi : features) {
+            if (fi.name != null && fi.name.equals(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)) {
+                return fi.version >= 0x00403000;
+            }
+        }
+        return false;
+    }
+
+    // Recursively copies an assets/ subtree (raw files, not a zip) into
+    // destDir. Returns false if the source asset folder doesn't exist/is
+    // empty -- lets callers tell "not bundled in this build" apart from a
+    // real I/O failure without throwing.
+    private boolean copyDriverAssetTree(String assetDir, File destDir) {
+        AssetManager assets = getAssets();
+        String[] children;
+        try {
+            children = assets.list(assetDir);
+        } catch (java.io.IOException e) {
+            return false;
+        }
+        if (children == null || children.length == 0) {
+            return false;
+        }
+        if (!destDir.mkdirs() && !destDir.isDirectory()) {
+            return false;
+        }
+        for (String child : children) {
+            String childAssetPath = assetDir + "/" + child;
+            File childDest = new File(destDir, child);
+            try {
+                String[] grandchildren = assets.list(childAssetPath);
+                if (grandchildren != null && grandchildren.length > 0) {
+                    if (!copyDriverAssetTree(childAssetPath, childDest)) {
+                        return false;
+                    }
+                    continue;
+                }
+            } catch (java.io.IOException e) {
+                return false;
+            }
+            try (java.io.InputStream in = assets.open(childAssetPath);
+                 java.io.FileOutputStream out = new java.io.FileOutputStream(childDest)) {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                }
+            } catch (java.io.IOException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void refreshCustomDriverStatus() {
@@ -340,15 +568,21 @@ public class SetupActivity extends Activity {
         try {
             startActivityForResult(intent, REQUEST_IMPORT_DRIVER);
         } catch (Exception e) {
-            Toast.makeText(this, "No file picker available: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_no_file_picker, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
 
     private void onClearCustomDriver() {
         new File(getFilesDir(), CUSTOM_DRIVER_CFG_NAME).delete();
+        new File(getFilesDir(), CUSTOM_DRIVER_AUTO_MARKER_NAME).delete();
         deleteRecursive(new File(getFilesDir(), CUSTOM_DRIVER_DIR_NAME));
+        applyRecommendedDriverIfNeeded();
         refreshCustomDriverStatus();
-        Toast.makeText(this, "Custom driver cleared. The phone's built-in Vulkan driver will be used again.", Toast.LENGTH_SHORT).show();
+        boolean autoApplied = new File(getFilesDir(), CUSTOM_DRIVER_AUTO_MARKER_NAME).isFile();
+        Toast.makeText(this, autoApplied
+            ? R.string.setup_toast_reset_auto
+            : R.string.setup_toast_reset_stock,
+            Toast.LENGTH_SHORT).show();
     }
 
     // customDriverDir passed to adrenotools_open_libvulkan() MUST NOT be on
@@ -360,7 +594,7 @@ public class SetupActivity extends Activity {
         File tmpDir = new File(getFilesDir(), CUSTOM_DRIVER_DIR_NAME + ".tmp");
         deleteRecursive(tmpDir);
         if (!tmpDir.mkdirs()) {
-            Toast.makeText(this, "Could not create working folder for driver import", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_driver_import_no_tmp, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -392,14 +626,14 @@ public class SetupActivity extends Activity {
             }
         } catch (Exception e) {
             deleteRecursive(tmpDir);
-            Toast.makeText(this, "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_driver_import_failed, e.getMessage()), Toast.LENGTH_LONG).show();
             return;
         }
 
         File metaFile = findFileByName(tmpDir, "meta.json");
         if (metaFile == null) {
             deleteRecursive(tmpDir);
-            Toast.makeText(this, "Import failed: meta.json not found in the .zip (not a valid adrenotools driver package)", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_driver_import_no_meta, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -415,7 +649,7 @@ public class SetupActivity extends Activity {
             }
         } catch (Exception e) {
             deleteRecursive(tmpDir);
-            Toast.makeText(this, "Import failed: invalid meta.json (" + e.getMessage() + ")", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_driver_import_bad_meta, e.getMessage()), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -428,7 +662,7 @@ public class SetupActivity extends Activity {
         boolean moved = driverSourceDir.renameTo(destDir);
         deleteRecursive(tmpDir);  // no-op if driverSourceDir WAS tmpDir (already moved away)
         if (!moved) {
-            Toast.makeText(this, "Import failed: could not finalize driver folder", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_driver_import_no_finalize, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -437,12 +671,15 @@ public class SetupActivity extends Activity {
             w.write(libraryName);
             w.write("\n");
         } catch (java.io.IOException e) {
-            Toast.makeText(this, "Could not save driver config: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_driver_config_failed, e.getMessage()), Toast.LENGTH_LONG).show();
             return;
         }
+        // This is an explicit user choice, not the auto-selected default --
+        // see applyRecommendedDriverIfNeeded() / CUSTOM_DRIVER_AUTO_MARKER_NAME.
+        new File(getFilesDir(), CUSTOM_DRIVER_AUTO_MARKER_NAME).delete();
 
         refreshCustomDriverStatus();
-        Toast.makeText(this, "Driver imported: " + libraryName + ". Takes effect next launch.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, getString(R.string.setup_toast_driver_imported, libraryName), Toast.LENGTH_LONG).show();
     }
 
     private static File findFileByName(File dir, String name) {
@@ -505,12 +742,12 @@ public class SetupActivity extends Activity {
     private TextView onlineStatusView;
 
     private void buildGeneralsOnlineSection(LinearLayout root) {
-        LinearLayout content = startCard(root, "Online Multiplayer");
+        LinearLayout content = startCard(root, getString(R.string.setup_card_online));
 
         onlineStatusView = new TextView(this);
         content.addView(onlineStatusView);
 
-        addButton(content, "GeneralsOnline Account", () ->
+        addButton(content, getString(R.string.setup_button_online_account), () ->
             startActivity(new Intent(this, GeneralsOnlineActivity.class)));
     }
 
@@ -520,8 +757,8 @@ public class SetupActivity extends Activity {
         }
         String displayName = GeneralsOnlineActivity.getSignedInDisplayName(this);
         onlineStatusView.setText(displayName != null
-            ? "Signed in as " + displayName + "."
-            : "Not signed in -- required for online matches.");
+            ? getString(R.string.setup_online_signed_in, displayName)
+            : getString(R.string.setup_online_signed_out));
     }
 
     private File optionsIniFile() {
@@ -570,7 +807,7 @@ public class SetupActivity extends Activity {
     private void writeKeyValueFile(File file, java.util.Map<String, String> prefs) {
         File parent = file.getParentFile();
         if (parent != null && !parent.exists() && !parent.mkdirs()) {
-            Toast.makeText(this, "Could not create Options.ini folder", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_options_dir_failed, Toast.LENGTH_LONG).show();
             return;
         }
         try (java.io.PrintWriter w = new java.io.PrintWriter(new java.io.FileWriter(file, false))) {
@@ -581,7 +818,7 @@ public class SetupActivity extends Activity {
                 w.print('\n');
             }
         } catch (java.io.IOException e) {
-            Toast.makeText(this, "Could not save Options.ini: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_options_save_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -622,20 +859,16 @@ public class SetupActivity extends Activity {
         String path = getSavedGamePath();
         StringBuilder sb = new StringBuilder();
         if (path == null) {
-            sb.append("Game folder: not set.\n");
+            sb.append(getString(R.string.setup_status_folder_not_set));
         } else {
             boolean valid = isValidGameFolder(new File(path));
-            sb.append("Game folder: ").append(path).append('\n');
-            sb.append(valid ? "Status: looks valid (found game archive files).\n"
-                             : "Status: this folder does NOT contain the expected "
-                               + "INIZH.big / INI.big — double check you picked the right one.\n");
+            sb.append(getString(R.string.setup_status_folder_line, path));
+            sb.append(getString(valid ? R.string.setup_status_folder_valid : R.string.setup_status_folder_invalid));
         }
         sb.append('\n');
-        sb.append("Crash/engine logs live in this app's private storage and are only "
-            + "reachable through \"View Logs\" above — Android hides them from normal "
-            + "file managers by design (this is standard Android sandboxing, not "
-            + "specific to this app).");
+        sb.append(getString(R.string.setup_status_logs_note));
         statusText.setText(sb.toString());
+        updateGameLanguageStatusView();
     }
 
     private String getSavedGamePath() {
@@ -702,9 +935,7 @@ public class SetupActivity extends Activity {
 
     private void onSelectGameFolder() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-            Toast.makeText(this,
-                "Grant \"Allow access to manage all files\" on the next screen, then come back and tap Select Game Folder again.",
-                Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.setup_toast_grant_all_files, Toast.LENGTH_LONG).show();
             try {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 intent.setData(Uri.parse("package:" + getPackageName()));
@@ -727,7 +958,7 @@ public class SetupActivity extends Activity {
                 refreshStatus();
                 boolean valid = isValidGameFolder(new File(path));
                 Toast.makeText(this,
-                    valid ? "Game folder saved." : "Saved, but no INIZH.big/INI.big found there — check the folder.",
+                    valid ? R.string.setup_toast_folder_saved : R.string.setup_toast_folder_saved_invalid,
                     Toast.LENGTH_LONG).show();
             }
         } else if (requestCode == REQUEST_IMPORT_DRIVER && resultCode == Activity.RESULT_OK && data != null) {
@@ -749,7 +980,7 @@ public class SetupActivity extends Activity {
             w.write(path);
             w.write("\n");
         } catch (java.io.IOException e) {
-            Toast.makeText(this, "Could not save folder marker: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, getString(R.string.setup_toast_marker_save_failed, e.getMessage()), Toast.LENGTH_LONG).show();
         }
         File externalMarker = externalMarkerFile();
         if (externalMarker != null) {
@@ -766,6 +997,7 @@ public class SetupActivity extends Activity {
         if (bundledRoot != null) {
             copyBundledRuntimeIfMissing(bundledRoot, path);
         }
+        applyGameLanguageOverride(LocaleHelper.getSavedLanguageTag(this));
     }
 
     // GeneralsX @bugfix Android port 07/07/2026 dxvk.conf, DefaultOptions.ini,
@@ -826,12 +1058,13 @@ public class SetupActivity extends Activity {
     private void onClearGameFolder() {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().remove(PREF_GAME_PATH).apply();
         new File(getFilesDir(), "gamedata_path.txt").delete();
+        new File(getFilesDir(), "game_language.cfg").delete();
         File externalMarker = externalMarkerFile();
         if (externalMarker != null) {
             externalMarker.delete();
         }
         refreshStatus();
-        Toast.makeText(this, "Cleared. The game will fall back to its default folder convention.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.setup_toast_folder_cleared, Toast.LENGTH_SHORT).show();
     }
 
     private void onViewLogs() {
