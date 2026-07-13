@@ -276,14 +276,36 @@ void androidCrashHandler(int sig, siginfo_t *info, void *ucontext) {
 	raise(sig);
 }
 
+// GeneralsX @bugfix Android port 13/07/2026 GitHub issue #2: several reports
+// show the engine log stopping mid-line, deep inside recursive/nested INI
+// block parsing (e.g. an object's ParticleSysBone sub-blocks), with VmRSS
+// still low (~247MB on a report from a 12-24GB device -- nowhere near an
+// OOM-kill threshold) and zero output from this very handler. A SIGSEGV
+// caused by exhausting the thread's own stack (deep recursion) delivers the
+// signal onto that SAME already-exhausted stack when no alternate signal
+// stack is registered -- the handler then immediately faults again trying
+// to push its own locals, and the process dies silently before a single
+// byte reaches appendCrashLog(). sigaltstack() + SA_ONSTACK gives the
+// handler a separate, always-valid stack to run on regardless of what state
+// the crashing thread's own stack is in, so a stack-overflow SIGSEGV
+// produces the same PC/LR/backtrace crash.log entry as any other fault
+// instead of just going silent.
+char s_altStack[64 * 1024];
+
 __attribute__((constructor))
 void installAndroidCrashHandler() {
 	computeCrashLogPath();
 
+	stack_t ss;
+	ss.ss_sp = s_altStack;
+	ss.ss_size = sizeof(s_altStack);
+	ss.ss_flags = 0;
+	sigaltstack(&ss, nullptr);
+
 	struct sigaction sa;
 	memset(&sa, 0, sizeof(sa));
 	sa.sa_sigaction = androidCrashHandler;
-	sa.sa_flags = SA_SIGINFO | SA_RESTART;
+	sa.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
 	sigemptyset(&sa.sa_mask);
 
 	const int signals[] = { SIGSEGV, SIGABRT, SIGBUS, SIGILL, SIGFPE };

@@ -61,8 +61,16 @@
 #include "GameNetwork/GameSpy/GSConfig.h"
 
 #include "Common/STLTypedefs.h"
+// GeneralsX @bugfix GameSpy 13/07/2026 GENERALS_ONLINE is only defined for
+// the GeneralsMD (Zero Hour) target's CMakeLists.txt -- these headers only
+// exist under GeneralsMD/Code/GameEngine/Include/, so an unconditional
+// include here breaks the base Generals target, which shares this .cpp via
+// Core/. Match the existing #if defined(GENERALS_ONLINE) guard below that
+// already wraps everything that actually uses these headers.
+#if defined(GENERALS_ONLINE)
 #include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
 #include "GameNetwork/GeneralsOnline/OnlineServices_LobbyInterface.h"
+#endif
 
 
 // PRIVATE DATA ///////////////////////////////////////////////////////////////////////////////////

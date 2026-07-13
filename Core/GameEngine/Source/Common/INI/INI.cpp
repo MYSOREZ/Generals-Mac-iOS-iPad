@@ -1653,11 +1653,38 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 							field, INI::getLineNum(), INI::getFilename().str());
 						fflush(stderr);
 						// parse this block and check for parse errors
+						//
+						// GeneralsX @bugfix Android port 13/07/2026 GitHub issue #2 follow-up -- a
+						// bare `catch (...)` here previously discarded the real exception's type
+						// and message before re-throwing a generic "Error reading field" string,
+						// so every report from a field-parser failure looked identical no matter
+						// what actually went wrong underneath (a missing Science/OCL/etc. name, a
+						// malformed token count, ...). Catch the two concrete types this codebase
+						// actually throws here (INIException's own message, and the ErrorCode enum
+						// used by ERROR_BUG/INI_INVALID_DATA/etc.) before the catch-all, and log
+						// the real cause, so it reaches the log instead of being lost.
+						bool parseFailed = false;
 						try {
 
 						(*parse)( this, what, (char *)what + offset + parseTableList.getNthExtraOffset(ptIdx), userData );
 
+						} catch (const INIException& e) {
+							fprintf(stderr, "[INI] field parser threw INIException: %s\n",
+								e.mFailureMessage ? e.mFailureMessage : "(no message)");
+							fflush(stderr);
+							parseFailed = true;
+						} catch (ErrorCode e) {
+							fprintf(stderr, "[INI] field parser threw ErrorCode=%u\n", (unsigned)e);
+							fflush(stderr);
+							parseFailed = true;
 						} catch (...) {
+							fprintf(stderr, "[INI] field parser threw an unrecognized exception type\n");
+							fflush(stderr);
+							parseFailed = true;
+						}
+
+						if (parseFailed)
+						{
 							DEBUG_CRASH( ("[LINE: %d - FILE: '%s'] Error reading field '%s' of block '%s'",
 																 INI::getLineNum(), INI::getFilename().str(), field, m_curBlockStart) );
 
