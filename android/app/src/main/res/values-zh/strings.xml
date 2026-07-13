@@ -25,7 +25,7 @@
 
     <!-- SetupActivity: Language card -->
     <string name="setup_card_language">语言</string>
-    <string name="setup_language_help">更改此设置应用、日志查看器和文件夹选择器的语言。对于德语、西班牙语、中文和俄语，还会同时切换游戏本体的文字 —— 但仅当你的游戏文件夹中确实存在该语言的数据时才会生效（data/&lt;语言&gt;/generals.csf）；本应用永远不会自行提供或伪造游戏文字。其他语言不会影响游戏本体的文字。“跟随系统”会使用手机的语言，如果列表中没有该语言，则回退为英语。</string>
+    <string name="setup_language_help">更改此设置应用、日志查看器和文件夹选择器的语言。对于德语、西班牙语、中文、法语、韩语、波兰语、巴西葡萄牙语和俄语，还会同时切换游戏本体的文字 —— 但仅当你的游戏文件夹中确实存在该语言的数据时才会生效（data/&lt;语言&gt;/generals.csf）；本应用永远不会自行提供或伪造游戏文字。其他语言不会影响游戏本体的文字。“跟随系统”会使用手机的语言，如果列表中没有该语言，则回退为英语。</string>
     <string name="setup_language_status">语言：%1$s</string>
     <string name="setup_button_change_language">更改语言</string>
     <string name="setup_language_dialog_title">选择语言</string>

@@ -50,7 +50,7 @@ final class LocaleHelper {
 
     // GeneralsX @feature Android port 13/07/2026 Keep this in the same order
     // shown in the Setup UI's language picker.
-    static final String[] SUPPORTED_TAGS = { "", "en", "ru", "de", "uk", "es", "zh", "isv", "ar", "fa" };
+    static final String[] SUPPORTED_TAGS = { "", "en", "ru", "de", "uk", "es", "zh", "fr", "ko", "pl", "pt-BR", "isv", "ar", "fa" };
 
     private LocaleHelper() {}
 
@@ -88,23 +88,33 @@ final class LocaleHelper {
     // GeneralsX @feature Android port 13/07/2026 GitHub issue #4 follow-up:
     // maps a launcher UI language tag to the engine's own language-folder
     // token (data/<token>/generals.csf, registry.cpp's GetRegistryLanguage())
-    // -- entirely separate namespaces. Only languages Zero Hour actually
-    // shipped official (or, for Russian, common licensed/fan) localized data
-    // for are listed; everything else returns null, meaning "don't touch the
-    // game's own language, only this app's UI changed." SetupActivity still
-    // requires data/<token>/generals.csf to actually exist in the user's own
-    // game folder before ever writing the override -- this mapping alone
-    // never forces a language whose data isn't present.
+    // -- entirely separate namespaces. Tokens for german/french/spanish/
+    // chinese/korean/polish/brazilian match tryAutoDetectLanguage()'s own
+    // candidate list in registry.cpp (the official Zero Hour SKUs); russian
+    // is not an official EA SKU (Zero Hour never shipped one) but the same
+    // data/<token>/generals.csf lookup works for a user-supplied fan/licensed
+    // translation, e.g. TheSuperHackers/GeneralsRussianLoca's ReleaseUnpacked
+    // "Data\Russian\" folder copied in as data/russian/ (lowercase, since
+    // this engine build's data/ lookup is case-sensitive). Everything else
+    // returns null, meaning "don't touch the game's own language, only this
+    // app's UI changed." SetupActivity still requires data/<token>/
+    // generals.csf to actually exist in the user's own game folder before
+    // ever writing the override -- this mapping alone never forces a
+    // language whose data isn't present.
     static String gameDataLanguageFor(String launcherTag) {
         if (launcherTag == null) {
             return null;
         }
         switch (launcherTag) {
-            case "de": return "german";
-            case "es": return "spanish";
-            case "zh": return "chinese";
-            case "ru": return "russian";  // not an official EA SKU; licensed/fan RU data
-            default:   return null;
+            case "de":    return "german";
+            case "es":    return "spanish";
+            case "zh":    return "chinese";
+            case "ru":    return "russian";  // not an official EA SKU; licensed/fan RU data
+            case "fr":    return "french";
+            case "ko":    return "korean";
+            case "pl":    return "polish";
+            case "pt-BR": return "brazilian";
+            default:      return null;
         }
     }
 
@@ -119,6 +129,10 @@ final class LocaleHelper {
             case "uk": return "Українська";
             case "es": return "Español";
             case "zh": return "中文 (简体)";
+            case "fr": return "Français";
+            case "ko": return "한국어";
+            case "pl": return "Polski";
+            case "pt-BR": return "Português (Brasil)";
             case "isv": return "Medžuslovjansky";
             case "ar": return "العربية";
             case "fa": return "فارسی";

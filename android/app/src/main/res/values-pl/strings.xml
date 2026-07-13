@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">Anuluj</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">Ustawienia GeneralsZH</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">Ustawienia Android</string>
+    <string name="setup_fallback_warning">Nie udało się załadować zwykłego interfejsu ustawień (%1$s). Wyświetlono prosty interfejs zastępczy, abyś nadal mógł dotrzeć do dzienników/folderu gry.</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">Folder gry</string>
+    <string name="setup_button_select_game_folder">Wybierz folder gry</string>
+    <string name="setup_button_launch_game">Uruchom grę</string>
+    <string name="setup_button_view_logs">Wyświetl dzienniki</string>
+    <string name="setup_button_clear_game_folder">Wyczyść ustawienie folderu gry</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">Folder gry: nie ustawiono.\n</string>
+    <string name="setup_status_folder_line">Folder gry: %1$s\n</string>
+    <string name="setup_status_folder_valid">Stan: wygląda poprawnie (znaleziono pliki archiwów gry).\n</string>
+    <string name="setup_status_folder_invalid">Stan: ten folder NIE zawiera oczekiwanych plików INIZH.big / INI.big — sprawdź, czy wybrano właściwy folder.\n</string>
+    <string name="setup_status_logs_note">Dzienniki awarii/silnika znajdują się w prywatnej pamięci tej aplikacji i są dostępne tylko przez „Wyświetl dzienniki” powyżej — Android celowo ukrywa je przed zwykłymi menedżerami plików (to standardowe piaskownicowanie Androida, a nie cecha specyficzna dla tej aplikacji).</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">Język</string>
+    <string name="setup_language_help">Zmienia język tej aplikacji ustawień, przeglądarki dzienników i wyboru folderu. Dla niemieckiego, hiszpańskiego, chińskiego, francuskiego, koreańskiego, polskiego, brazylijskiego portugalskiego i rosyjskiego zmienia też automatycznie tekst samej gry — ale tylko jeśli folder gry rzeczywiście zawiera dane tego języka (data/&lt;język&gt;/generals.csf); ta aplikacja nigdy sama nie dostarcza ani nie zmyśla tekstu gry. Dla pozostałych języków tekst gry pozostaje bez zmian. „Domyślny systemowy” podąża za językiem telefonu, z powrotem do angielskiego, jeśli nie ma go na liście.</string>
+    <string name="setup_language_status">Język: %1$s</string>
+    <string name="setup_button_change_language">Zmień język</string>
+    <string name="setup_language_dialog_title">Wybierz język</string>
+    <string name="setup_language_system_default">Domyślny systemowy</string>
+    <string name="setup_language_game_status_default">Tekst gry: nie dotyczy tego ustawienia (używany jest własny język gry z registry.ini, domyślnie angielski).</string>
+    <string name="setup_language_game_status_override">Tekst gry: również zmieniony (znaleziono data/%1$s/generals.csf w folderze gry).</string>
+    <string name="setup_language_game_status_missing">Tekst gry: NIE zmieniony — nie znaleziono data/%1$s/generals.csf w folderze gry, więc gra zachowuje swój własny język.</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">Rozmiar tekstu menu</string>
+    <string name="setup_text_size_label">Skala: %1$d%%</string>
+    <string name="setup_button_apply_text_size">Zastosuj rozmiar tekstu menu</string>
+    <string name="setup_text_size_help">Skaluje tekst większości przycisków/etykiet menu w zależności od rozdzielczości ekranu. 70 to wartość domyślna samej gry; wyższe wartości powiększają tekst menu. Zaczyna działać przy następnym uruchomieniu gry, nie na żywo.</string>
+    <string name="setup_toast_text_size_saved">Zapisano. Zacznie działać przy następnym uruchomieniu gry.</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">Własny sterownik Vulkan (zaawansowane, tylko GPU Adreno)</string>
+    <string name="setup_button_import_driver">Importuj sterownik (.zip)</string>
+    <string name="setup_button_reset_driver">Przywróć zalecany</string>
+    <string name="setup_driver_help">Wczytuje sterownik Vulkan (kompilację Mesa Turnip) zamiast wbudowanego sterownika telefonu — ta sama technika, której używają Winlator i AetherSX2. Może to pozwolić niektórym telefonom z Qualcomm Adreno uruchomić grę, nawet jeśli ich fabryczny sterownik zgłasza tylko Vulkan 1.1/1.2 (DXVK wymaga 1.3). Na odpowiednim telefonie Adreno stosowane jest to automatycznie — „Przywróć zalecany” przywraca ten automatyczny wybór po zaimportowaniu czegoś innego.\n\nTo NIE pomaga w przypadku Mali, PowerVR ani innych GPU innych niż Adreno — ta opcja nie ma na nie wpływu, nie ma dla nich odpowiednika.\n\n„Importuj sterownik” pozwala zastąpić automatyczny wybór własnym plikiem .zip sterownika w formacie adrenotools (np. z K11MCH1/AdrenoToolsDrivers lub The412Banner/Banners-Turnip na GitHub). Zaczyna działać przy następnym uruchomieniu, nie na żywo.</string>
+    <string name="setup_driver_status_none">Brak aktywnego własnego sterownika — używany jest wbudowany sterownik Vulkan telefonu.</string>
+    <string name="setup_driver_status_auto">Zalecany sterownik (wybrany automatycznie dla tego urządzenia): %1$s</string>
+    <string name="setup_driver_status_manual">Własny sterownik (zaimportowany ręcznie): %1$s</string>
+    <string name="setup_driver_unknown">(nieznany)</string>
+    <string name="setup_toast_no_file_picker">Brak dostępnego selektora plików: %1$s</string>
+    <string name="setup_toast_reset_auto">Zresetowano. Zalecany sterownik dla tego urządzenia został ponownie zastosowany.</string>
+    <string name="setup_toast_reset_stock">Zresetowano. Będzie używany wbudowany sterownik Vulkan telefonu.</string>
+    <string name="setup_toast_driver_import_no_tmp">Nie udało się utworzyć folderu roboczego do importu sterownika</string>
+    <string name="setup_toast_driver_import_failed">Import nie powiódł się: %1$s</string>
+    <string name="setup_toast_driver_import_no_meta">Import nie powiódł się: nie znaleziono meta.json w pliku .zip (to nie jest prawidłowy pakiet sterownika adrenotools)</string>
+    <string name="setup_toast_driver_import_bad_meta">Import nie powiódł się: nieprawidłowy meta.json (%1$s)</string>
+    <string name="setup_toast_driver_import_no_finalize">Import nie powiódł się: nie udało się sfinalizować folderu sterownika</string>
+    <string name="setup_toast_driver_config_failed">Nie udało się zapisać konfiguracji sterownika: %1$s</string>
+    <string name="setup_toast_driver_imported">Zaimportowano sterownik: %1$s. Zacznie działać przy następnym uruchomieniu.</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">Tryb wieloosobowy online</string>
+    <string name="setup_button_online_account">Konto GeneralsOnline</string>
+    <string name="setup_online_signed_in">Zalogowano jako %1$s.</string>
+    <string name="setup_online_signed_out">Nie zalogowano — wymagane do gier online.</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">Jak to działa</string>
+    <string name="setup_how_it_works_body">1. „Wybierz folder gry” otwiera przeglądarkę folderów w pamięci telefonu. Przejdź tam, gdzie skopiowano własną instalację Command &amp; Conquer Generals Zero Hour (folder zawierający INIZH.big, Data\\, ZH_Generals\\ itd.) i dotknij „Użyj tego folderu”.\n\n2. Jeśli lista wygląda na pustą, oznacza to, że Android najpierw prosi o uprawnienie „Dostęp do wszystkich plików” — przyznaj je na otwierającym się ekranie (to zwykłe uprawnienie Androida, bez roota).\n\n3. „Wyświetl dzienniki” pokazuje dziennik silnika, a jeśli gra się zawiesiła, także natywny dziennik awarii — bez komputera czy adb. Użyj tam przycisku Udostępnij, aby wysłać dziennik do siebie.\n\n4. „Uruchom grę” uruchamia grę z wybranym folderem.</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">Przyznaj „Zezwól na dostęp do zarządzania wszystkimi plikami” na następnym ekranie, a następnie wróć i ponownie dotknij Wybierz folder gry.</string>
+    <string name="setup_toast_folder_saved">Zapisano folder gry.</string>
+    <string name="setup_toast_folder_saved_invalid">Zapisano, ale nie znaleziono tam plików INIZH.big/INI.big — sprawdź folder.</string>
+    <string name="setup_toast_marker_save_failed">Nie udało się zapisać znacznika folderu: %1$s</string>
+    <string name="setup_toast_folder_cleared">Wyczyszczono. Gra powróci do domyślnej konwencji folderu.</string>
+    <string name="setup_toast_options_dir_failed">Nie udało się utworzyć folderu dla Options.ini</string>
+    <string name="setup_toast_options_save_failed">Nie udało się zapisać Options.ini: %1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">Wybierz folder gry</string>
+    <string name="folderpicker_up_entry">⬆️  .. (w górę)</string>
+    <string name="folderpicker_button_use">Użyj tego folderu</string>
+    <string name="folderpicker_hint_valid">✓ Ten folder zawiera INIZH.big/INI.big — wygląda poprawnie.</string>
+    <string name="folderpicker_hint_invalid">Przejdź do folderu gry, a następnie dotknij „Użyj tego folderu”.</string>
+    <string name="folderpicker_toast_cant_read">Nie można odczytać tego folderu. Jeśli listy wszędzie wyglądają na puste, najpierw przyznaj „Dostęp do wszystkich plików” na ekranie Ustawień.</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">Dzienniki</string>
+    <string name="logviewer_button_clear">Wyczyść dzienniki</string>
+    <string name="logviewer_button_copy">Kopiuj</string>
+    <string name="logviewer_button_share">Udostępnij</string>
+    <string name="logviewer_toast_copied">Skopiowano do schowka.</string>
+    <string name="logviewer_section_crash_log">=== crash.log (natywna obsługa awarii, pamięć wewnętrzna) ===\n</string>
+    <string name="logviewer_crash_log_absent">(brak — nie odnotowano żadnej natywnej awarii od czasu instalacji lub aplikacja nigdy nie uruchomiła się dalej niż wczytanie biblioteki)</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log (dziennik silnika, pamięć zewnętrzna) ===\n</string>
+    <string name="logviewer_stderr_log_absent">(brak — funkcja main() silnika jeszcze się nie uruchomiła lub pamięć zewnętrzna jest niedostępna)</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log (poprzednia sesja) ===\n</string>
+    <string name="logviewer_prev_log_absent">(brak)</string>
+    <string name="logviewer_dialog_clear_title">Wyczyść dzienniki</string>
+    <string name="logviewer_dialog_clear_message">Usunąć dziennik awarii i pliki dziennika silnika? Tej czynności nie można cofnąć.</string>
+    <string name="logviewer_dialog_clear_confirm">Wyczyść</string>
+    <string name="logviewer_dialog_clear_cancel">Anuluj</string>
+    <string name="logviewer_toast_cleared">Wyczyszczono dzienniki.</string>
+    <string name="logviewer_share_subject">Dziennik GeneralsZH Android</string>
+    <string name="logviewer_share_chooser_title">Udostępnij dziennik</string>
+    <string name="logviewer_toast_share_failed">Nie udało się przygotować pliku dziennika do udostępnienia: %1$s</string>
+    <string name="logviewer_read_failed">(nie udało się odczytać %1$s: %2$s)</string>
+    <string name="logviewer_truncated_notice">...(obcięto, pokazano końcową część)...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">Konto GeneralsOnline</string>
+    <string name="online_subtitle">Zaloguj się, aby grać wieloosobowo online (playgenerals.online)</string>
+    <string name="online_button_sign_out">Wyloguj</string>
+    <string name="online_card_sign_in">Logowanie</string>
+    <string name="online_signin_help">Dotknij Zaloguj się. Za pierwszym razem może pojawić się prośba o wykluczenie tej aplikacji z optymalizacji baterii — zezwól na to, a następnie wróć i ponownie dotknij Zaloguj się. Otworzy się wtedy przeglądarka na playgenerals.online, już z jednorazowym kodem dla tego urządzenia. Wybierz tam Steam, Discord lub GameReplays, a następnie po prostu wróć do tej aplikacji — logowanie zakończy się samo.</string>
+    <string name="online_button_sign_in">Zaloguj się</string>
+    <string name="online_status_signing_in">Logowanie...</string>
+    <string name="online_status_battery_opt">Zezwól aplikacji GeneralsZH na działanie w tle na następnym ekranie, a następnie wróć i ponownie dotknij Zaloguj się — w przeciwnym razie Android może przerwać sprawdzanie logowania podczas przebywania w przeglądarce.</string>
+    <string name="online_toast_no_browser">Brak dostępnej przeglądarki: %1$s</string>
+    <string name="online_status_continue_browser">Kontynuuj w przeglądarce — wróć tutaj po zalogowaniu.</string>
+    <string name="online_status_network_error">Błąd sieci — sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="online_toast_signed_in_as">Zalogowano jako %1$s</string>
+    <string name="online_status_signin_failed">Logowanie nie powiodło się lub zostało anulowane — dotknij Zaloguj się, aby spróbować ponownie.</string>
+    <string name="online_status_timed_out">Przekroczono czas oczekiwania — dotknij Zaloguj się, aby spróbować ponownie.</string>
+    <string name="online_status_unexpected">Nieoczekiwana odpowiedź — dotknij Zaloguj się, aby spróbować ponownie.</string>
+    <string name="online_toast_signed_out">Wylogowano.</string>
+    <string name="online_status_signed_in_as">Zalogowano jako %1$s.</string>
+    <string name="online_status_not_signed_in">Nie zalogowano.</string>
+</resources>

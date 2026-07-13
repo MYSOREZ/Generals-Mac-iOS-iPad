@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Generals Zero Hour</string>
+    <string name="common_cancel">Annuler</string>
+
+    <!-- SetupActivity: title / fallback -->
+    <string name="setup_window_title">Paramètres GeneralsZH</string>
+    <string name="setup_title">Command &amp; Conquer Generals: Zero Hour</string>
+    <string name="setup_subtitle">Paramètres Android</string>
+    <string name="setup_fallback_warning">L\'interface normale des paramètres n\'a pas pu se charger (%1$s). Une interface de secours simplifiée s\'affiche pour que vous puissiez quand même accéder aux journaux/au dossier du jeu.</string>
+
+    <!-- SetupActivity: Game Folder card -->
+    <string name="setup_card_game_folder">Dossier du jeu</string>
+    <string name="setup_button_select_game_folder">Sélectionner le dossier du jeu</string>
+    <string name="setup_button_launch_game">Lancer le jeu</string>
+    <string name="setup_button_view_logs">Afficher les journaux</string>
+    <string name="setup_button_clear_game_folder">Réinitialiser le dossier du jeu</string>
+
+    <!-- SetupActivity: status text -->
+    <string name="setup_status_folder_not_set">Dossier du jeu : non défini.\n</string>
+    <string name="setup_status_folder_line">Dossier du jeu : %1$s\n</string>
+    <string name="setup_status_folder_valid">État : semble valide (fichiers d\'archives du jeu trouvés).\n</string>
+    <string name="setup_status_folder_invalid">État : ce dossier ne contient PAS les fichiers INIZH.big / INI.big attendus — vérifiez que vous avez choisi le bon dossier.\n</string>
+    <string name="setup_status_logs_note">Les journaux de plantage/du moteur sont stockés dans le stockage privé de cette application et ne sont accessibles que via « Afficher les journaux » ci-dessus — Android les masque intentionnellement des gestionnaires de fichiers classiques (c\'est le fonctionnement standard du bac à sable Android, pas une particularité de cette application).</string>
+
+    <!-- SetupActivity: Language card -->
+    <string name="setup_card_language">Langue</string>
+    <string name="setup_language_help">Change la langue de cette application de paramètres, de son visualiseur de journaux et de son sélecteur de dossier. Pour l\'allemand, l\'espagnol, le chinois, le français, le coréen, le polonais, le portugais brésilien et le russe, cela change aussi automatiquement le texte du jeu lui-même — mais seulement si votre dossier de jeu contient réellement les données de cette langue (data/&lt;langue&gt;/generals.csf) ; cette application ne fournit ni n\'invente jamais elle-même le texte du jeu. Pour les autres langues, le texte du jeu reste inchangé. « Par défaut du système » suit la langue de votre téléphone, avec repli sur l\'anglais si elle ne figure pas dans la liste.</string>
+    <string name="setup_language_status">Langue : %1$s</string>
+    <string name="setup_button_change_language">Changer de langue</string>
+    <string name="setup_language_dialog_title">Choisir une langue</string>
+    <string name="setup_language_system_default">Par défaut du système</string>
+    <string name="setup_language_game_status_default">Texte du jeu : non affecté par ce paramètre (utilise la langue propre au jeu depuis registry.ini, ou l\'anglais par défaut).</string>
+    <string name="setup_language_game_status_override">Texte du jeu : également changé (data/%1$s/generals.csf trouvé dans votre dossier de jeu).</string>
+    <string name="setup_language_game_status_missing">Texte du jeu : PAS changé — data/%1$s/generals.csf introuvable dans votre dossier de jeu, le jeu conserve donc sa propre langue.</string>
+
+    <!-- SetupActivity: Menu Text Size card -->
+    <string name="setup_card_text_size">Taille du texte des menus</string>
+    <string name="setup_text_size_label">Échelle : %1$d%%</string>
+    <string name="setup_button_apply_text_size">Appliquer la taille du texte des menus</string>
+    <string name="setup_text_size_help">Redimensionne la plupart des textes de boutons/étiquettes de menu selon la résolution de l\'écran. 70 est la valeur par défaut du jeu ; des valeurs plus élevées agrandissent le texte des menus. Prend effet au prochain lancement du jeu, pas immédiatement.</string>
+    <string name="setup_toast_text_size_saved">Enregistré. Prendra effet au prochain lancement du jeu.</string>
+
+    <!-- SetupActivity: Custom Vulkan Driver card -->
+    <string name="setup_card_vulkan_driver">Pilote Vulkan personnalisé (avancé, GPU Adreno uniquement)</string>
+    <string name="setup_button_import_driver">Importer un pilote (.zip)</string>
+    <string name="setup_button_reset_driver">Réinitialiser au pilote recommandé</string>
+    <string name="setup_driver_help">Charge un pilote Vulkan (une version de Mesa Turnip) à la place du pilote intégré de votre téléphone — la même technique qu\'utilisent Winlator et AetherSX2. Cela peut permettre à certains téléphones Qualcomm Adreno de faire tourner le jeu même si leur pilote d\'origine ne rapporte que Vulkan 1.1/1.2 (DXVK nécessite la 1.3). Sur un téléphone Adreno compatible, cela s\'applique automatiquement — « Réinitialiser au pilote recommandé » restaure ce choix automatique après avoir importé autre chose.\n\nCela n\'aide PAS Mali, PowerVR ou d\'autres GPU non-Adreno — ils ne sont pas concernés par cette option, il n\'existe pas d\'équivalent pour eux.\n\n« Importer un pilote » vous permet de remplacer le choix automatique par votre propre fichier .zip de pilote au format adrenotools (par exemple depuis K11MCH1/AdrenoToolsDrivers ou The412Banner/Banners-Turnip sur GitHub). Prend effet au prochain lancement, pas immédiatement.</string>
+    <string name="setup_driver_status_none">Aucun pilote personnalisé actif — le pilote Vulkan intégré du téléphone est utilisé.</string>
+    <string name="setup_driver_status_auto">Pilote recommandé (sélectionné automatiquement pour cet appareil) : %1$s</string>
+    <string name="setup_driver_status_manual">Pilote personnalisé (importé manuellement) : %1$s</string>
+    <string name="setup_driver_unknown">(inconnu)</string>
+    <string name="setup_toast_no_file_picker">Aucun sélecteur de fichiers disponible : %1$s</string>
+    <string name="setup_toast_reset_auto">Réinitialisation effectuée. Le pilote recommandé pour cet appareil a été réappliqué.</string>
+    <string name="setup_toast_reset_stock">Réinitialisation effectuée. Le pilote Vulkan intégré du téléphone sera utilisé.</string>
+    <string name="setup_toast_driver_import_no_tmp">Impossible de créer le dossier de travail pour l\'importation du pilote</string>
+    <string name="setup_toast_driver_import_failed">Échec de l\'importation : %1$s</string>
+    <string name="setup_toast_driver_import_no_meta">Échec de l\'importation : meta.json introuvable dans le .zip (ce n\'est pas un paquet de pilote adrenotools valide)</string>
+    <string name="setup_toast_driver_import_bad_meta">Échec de l\'importation : meta.json invalide (%1$s)</string>
+    <string name="setup_toast_driver_import_no_finalize">Échec de l\'importation : impossible de finaliser le dossier du pilote</string>
+    <string name="setup_toast_driver_config_failed">Impossible d\'enregistrer la configuration du pilote : %1$s</string>
+    <string name="setup_toast_driver_imported">Pilote importé : %1$s. Prendra effet au prochain lancement.</string>
+
+    <!-- SetupActivity: Online Multiplayer card -->
+    <string name="setup_card_online">Multijoueur en ligne</string>
+    <string name="setup_button_online_account">Compte GeneralsOnline</string>
+    <string name="setup_online_signed_in">Connecté en tant que %1$s.</string>
+    <string name="setup_online_signed_out">Non connecté — requis pour les parties en ligne.</string>
+
+    <!-- SetupActivity: How this works card -->
+    <string name="setup_card_how_it_works">Comment ça marche</string>
+    <string name="setup_how_it_works_body">1. « Sélectionner le dossier du jeu » ouvre un explorateur de dossiers sur le stockage de votre téléphone. Accédez à l\'endroit où vous avez copié votre propre installation de Command &amp; Conquer Generals Zero Hour (le dossier contenant INIZH.big, Data\\, ZH_Generals\\, etc.) et appuyez sur « Utiliser ce dossier ».\n\n2. Si la liste semble vide, Android demande d\'abord la permission « Accès à tous les fichiers » — accordez-la sur l\'écran qui s\'ouvre (il s\'agit d\'une permission Android normale, aucun root nécessaire).\n\n3. « Afficher les journaux » montre le journal du moteur et, si le jeu a planté, un journal de plantage natif — sans ordinateur ni adb. Utilisez le bouton Partager pour vous envoyer le journal.\n\n4. « Lancer le jeu » démarre le jeu avec le dossier que vous avez choisi.</string>
+
+    <!-- SetupActivity: folder selection / misc toasts -->
+    <string name="setup_toast_grant_all_files">Accordez « Autoriser l\'accès pour gérer tous les fichiers » sur l\'écran suivant, puis revenez et appuyez à nouveau sur Sélectionner le dossier du jeu.</string>
+    <string name="setup_toast_folder_saved">Dossier du jeu enregistré.</string>
+    <string name="setup_toast_folder_saved_invalid">Enregistré, mais aucun INIZH.big/INI.big trouvé — vérifiez le dossier.</string>
+    <string name="setup_toast_marker_save_failed">Impossible d\'enregistrer le repère du dossier : %1$s</string>
+    <string name="setup_toast_folder_cleared">Réinitialisé. Le jeu utilisera à nouveau son dossier par défaut.</string>
+    <string name="setup_toast_options_dir_failed">Impossible de créer le dossier pour Options.ini</string>
+    <string name="setup_toast_options_save_failed">Impossible d\'enregistrer Options.ini : %1$s</string>
+
+    <!-- FolderPickerActivity -->
+    <string name="folderpicker_title">Sélectionner le dossier du jeu</string>
+    <string name="folderpicker_up_entry">⬆️  .. (remonter)</string>
+    <string name="folderpicker_button_use">Utiliser ce dossier</string>
+    <string name="folderpicker_hint_valid">✓ Ce dossier contient INIZH.big/INI.big — semble correct.</string>
+    <string name="folderpicker_hint_invalid">Accédez à votre dossier de jeu, puis appuyez sur « Utiliser ce dossier ».</string>
+    <string name="folderpicker_toast_cant_read">Impossible de lire ce dossier. Si la liste semble vide partout, accordez d\'abord « Accès à tous les fichiers » depuis l\'écran des paramètres.</string>
+
+    <!-- LogViewerActivity -->
+    <string name="logviewer_title">Journaux</string>
+    <string name="logviewer_button_clear">Effacer les journaux</string>
+    <string name="logviewer_button_copy">Copier</string>
+    <string name="logviewer_button_share">Partager</string>
+    <string name="logviewer_toast_copied">Copié dans le presse-papiers.</string>
+    <string name="logviewer_section_crash_log">=== crash.log (gestionnaire de plantage natif, stockage interne) ===\n</string>
+    <string name="logviewer_crash_log_absent">(absent — aucun plantage natif enregistré depuis l\'installation, ou l\'application n\'a jamais dépassé le chargement de la bibliothèque)</string>
+    <string name="logviewer_section_stderr_log">=== generals-stderr.log (journal du moteur, stockage externe) ===\n</string>
+    <string name="logviewer_stderr_log_absent">(absent — le main() du moteur n\'a pas encore démarré, ou le stockage externe n\'est pas disponible)</string>
+    <string name="logviewer_section_prev_log">=== generals-stderr-prev.log (session précédente) ===\n</string>
+    <string name="logviewer_prev_log_absent">(absent)</string>
+    <string name="logviewer_dialog_clear_title">Effacer les journaux</string>
+    <string name="logviewer_dialog_clear_message">Supprimer le journal de plantage et les fichiers de journal du moteur ? Cette action est irréversible.</string>
+    <string name="logviewer_dialog_clear_confirm">Effacer</string>
+    <string name="logviewer_dialog_clear_cancel">Annuler</string>
+    <string name="logviewer_toast_cleared">Journaux effacés.</string>
+    <string name="logviewer_share_subject">Journal GeneralsZH Android</string>
+    <string name="logviewer_share_chooser_title">Partager le journal</string>
+    <string name="logviewer_toast_share_failed">Impossible de préparer le fichier journal pour le partage : %1$s</string>
+    <string name="logviewer_read_failed">(impossible de lire %1$s : %2$s)</string>
+    <string name="logviewer_truncated_notice">...(tronqué, affichage de la fin)...\n</string>
+
+    <!-- GeneralsOnlineActivity -->
+    <string name="online_window_title">Compte GeneralsOnline</string>
+    <string name="online_subtitle">Connectez-vous pour le multijoueur en ligne (playgenerals.online)</string>
+    <string name="online_button_sign_out">Se déconnecter</string>
+    <string name="online_card_sign_in">Connexion</string>
+    <string name="online_signin_help">Appuyez sur Se connecter. Le premier appui peut demander d\'exempter cette application de l\'optimisation de la batterie — autorisez-le, puis revenez et appuyez à nouveau sur Se connecter. Un navigateur s\'ouvre alors sur playgenerals.online, déjà avec un code à usage unique pour cet appareil. Choisissez Steam, Discord ou GameReplays, puis revenez simplement à cette application ; la connexion se termine d\'elle-même.</string>
+    <string name="online_button_sign_in">Se connecter</string>
+    <string name="online_status_signing_in">Connexion en cours...</string>
+    <string name="online_status_battery_opt">Autorisez GeneralsZH à s\'exécuter en arrière-plan sur l\'écran suivant, puis revenez et appuyez à nouveau sur Se connecter — sinon Android pourrait interrompre la vérification de connexion pendant que vous êtes dans le navigateur.</string>
+    <string name="online_toast_no_browser">Aucun navigateur disponible : %1$s</string>
+    <string name="online_status_continue_browser">Continuez dans votre navigateur — revenez ici une fois connecté.</string>
+    <string name="online_status_network_error">Erreur réseau — vérifiez votre connexion et réessayez.</string>
+    <string name="online_toast_signed_in_as">Connecté en tant que %1$s</string>
+    <string name="online_status_signin_failed">La connexion a échoué ou a été annulée — appuyez sur Se connecter pour réessayer.</string>
+    <string name="online_status_timed_out">Délai d\'attente dépassé — appuyez sur Se connecter pour réessayer.</string>
+    <string name="online_status_unexpected">Réponse inattendue — appuyez sur Se connecter pour réessayer.</string>
+    <string name="online_toast_signed_out">Déconnecté.</string>
+    <string name="online_status_signed_in_as">Connecté en tant que %1$s.</string>
+    <string name="online_status_not_signed_in">Non connecté.</string>
+</resources>

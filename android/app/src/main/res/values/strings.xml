@@ -25,7 +25,7 @@
 
     <!-- SetupActivity: Language card -->
     <string name="setup_card_language">Language</string>
-    <string name="setup_language_help">Changes the language of this Settings app and its Log Viewer / folder browser. For German, Spanish, Chinese and Russian, it also switches the game\'s own text automatically, but only if your game folder actually contains that language\'s data (data/&lt;language&gt;/generals.csf) — this app never ships or fakes game text itself, and other languages leave the game\'s own text untouched. \"System Default\" follows your phone\'s language, falling back to English if it isn\'t one of the languages listed.</string>
+    <string name="setup_language_help">Changes the language of this Settings app and its Log Viewer / folder browser. For German, Spanish, Chinese, French, Korean, Polish, Brazilian Portuguese and Russian, it also switches the game\'s own text automatically, but only if your game folder actually contains that language\'s data (data/&lt;language&gt;/generals.csf) — this app never ships or fakes game text itself, and other languages leave the game\'s own text untouched. \"System Default\" follows your phone\'s language, falling back to English if it isn\'t one of the languages listed.</string>
     <string name="setup_language_status">Language: %1$s</string>
     <string name="setup_button_change_language">Change Language</string>
     <string name="setup_language_dialog_title">Choose a language</string>
