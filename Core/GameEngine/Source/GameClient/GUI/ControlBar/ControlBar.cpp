@@ -554,8 +554,17 @@ void CommandButton::parseCommand( INI* ini, void *instance, void *store, const v
 
 	}
 
-	// if we're here the command was not found
-	throw INI_INVALID_DATA;
+	// GeneralsX @bugfix Android port 13/07/2026 - A real-device log (GitHub
+	// issue #2, stock/patched retail data) showed this throw firing for
+	// CommandButton.ini's Command field, same bug pattern as the science
+	// lookups fixed earlier: an unrecognized token takes down the entire
+	// file load. Log a warning and default to GUI_COMMAND_NONE (the same
+	// sentinel the class constructor already uses) instead of aborting.
+	DEBUG_CRASH(("Command '%s' not found in TheGuiCommandNames -- defaulting to GUI_COMMAND_NONE", token));
+	fprintf(stderr, "WARNING: Command '%s' not recognized -- defaulting to GUI_COMMAND_NONE\n", token);
+	fflush(stderr);
+	GUICommandType *command = (GUICommandType *)store;
+	*command = GUI_COMMAND_NONE;
 
 }
 
