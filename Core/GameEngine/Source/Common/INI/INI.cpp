@@ -438,14 +438,41 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 					static_assert(ARRAY_SIZE(m_curBlockStart) >= ARRAY_SIZE(m_buffer), "Incorrect array size");
 					strcpy(m_curBlockStart, m_buffer);
 					#endif
+					// GeneralsX @bugfix Android port 12/07/2026 - Log every block as it starts,
+					// unconditionally (not just on error). If parsing ever dies without throwing
+					// a C++ exception at all (e.g. a raw SIGSEGV inside a block parser), this is
+					// the only trace of which block was in progress -- the exception handlers
+					// below can't report what was never thrown.
+					fprintf(stderr, "DEBUG-INI: block start token='%s' line=%u file='%s'\n",
+						token, m_lineNum, m_filename.str());
+					fflush(stderr);
 					try {
 						(*parse)( this );
 
-					} catch (...) {
+					}
+					// GeneralsX @bugfix Android port 12/07/2026 - This used to be a single
+					// catch(...) that unconditionally replaced whatever was thrown with a
+					// generic "(Line: '<block-start line>')" message. The per-field parser
+					// deeper in the call stack (see the INIFieldParseProc catch below) already
+					// throws a much more precise INIException naming the exact field, line,
+					// and file -- but that got silently swallowed and overwritten here, which
+					// is why a real-device report (GitHub issue #2, airforcegeneral.ini /
+					// AirF_AmericaJetSpectreGunship1) only ever showed the block's opening
+					// line, never the actual failing field. Let an INIException that already
+					// has a message propagate unchanged; only synthesize a generic one for
+					// exception types that don't carry field-level detail.
+					catch (const INIException&) {
+						throw;
+					}
+					catch (...) {
 						DEBUG_CRASH(("Error parsing block '%s' in INI file '%s'", token, m_filename.str()) );
 						char buff[1024];
-						snprintf(buff, ARRAY_SIZE(buff), "Error parsing INI file '%s' (Line: '%s')\n",
-							m_filename.str(), currentLine.str());
+						// m_buffer/m_lineNum reflect the last line actually read (via
+						// readLine(), shared by every nested per-field parser on this same
+						// INI instance) at throw time, which is generally much closer to the
+						// real failure than currentLine (captured before (*parse)(this) ran).
+						snprintf(buff, ARRAY_SIZE(buff), "Error parsing INI file '%s' in block starting '%s' (failing near line %u: '%s')\n",
+							m_filename.str(), currentLine.str(), m_lineNum, m_buffer);
 
 						throw INIException(buff);
 					}
@@ -466,9 +493,35 @@ UnsignedInt INI::load( AsciiString filename, INILoadType loadType, Xfer *pXfer )
 		fprintf(stderr, "[INI] load - processed total %d lines\n", lineCount);
 		fflush(stderr);
 	}
+	// GeneralsX @bugfix Android port 11/07/2026 the plain `catch (...)` below
+	// used to be the ONLY handler here, which logs that *something* failed
+	// but throws away the actual exception's content -- traced a real-device
+	// crash report (Weapon.ini, GitHub issue #2) back to this exact spot and
+	// still couldn't tell which weapon/field/token was at fault, because the
+	// original C++ exception (an INIException with a formatted message, or a
+	// raw ErrorCode enum thrown by scanIndexList()/findBlockParse() failures)
+	// was already gone by the time it got here. Catch the two concrete types
+	// this parser actually throws first so their content survives into the
+	// log, then keep the generic catch(...) as a fallback for anything else
+	// (e.g. std::bad_alloc from a genuinely oversized file).
+	catch (const INIException& e)
+	{
+		fprintf(stderr, "[INI] ERROR in load('%s') - INIException: %s\n",
+			filename.str(), e.mFailureMessage ? e.mFailureMessage : "(no message)");
+		fflush(stderr);
+		unPrepFile();
+		throw;
+	}
+	catch (ErrorCode ec)
+	{
+		fprintf(stderr, "[INI] ERROR in load('%s') - ErrorCode=%u\n", filename.str(), (unsigned)ec);
+		fflush(stderr);
+		unPrepFile();
+		throw;
+	}
 	catch (...)
 	{
-		fprintf(stderr, "[INI] ERROR in load('%s') - exception caught\n", filename.str());
+		fprintf(stderr, "[INI] ERROR in load('%s') - exception caught (unrecognized type)\n", filename.str());
 		fflush(stderr);
 		unPrepFile();
 
@@ -1580,6 +1633,14 @@ void INI::initFromINIMulti( void *what, const MultiIniFieldParse& parseTableList
 					INIFieldParseProc parse = findFieldParse(parseTableList.getNthFieldParse(ptIdx), field, offset, userData);
 					if (parse)
 					{
+						// GeneralsX @bugfix Android port 12/07/2026 - Log every field as it
+						// starts, unconditionally. Pairs with the block-start log above (which
+						// names the enclosing block): if something dies without ever throwing
+						// a C++ exception (a raw crash deep in a field parser), this is the
+						// last thing that will have been written, naming the exact field/line.
+						fprintf(stderr, "DEBUG-INI: field start field='%s' line=%d file='%s'\n",
+							field, INI::getLineNum(), INI::getFilename().str());
+						fflush(stderr);
 						// parse this block and check for parse errors
 						try {
 

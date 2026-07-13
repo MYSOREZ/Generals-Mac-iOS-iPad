@@ -29,25 +29,41 @@
 // A Share button hands the combined text to any app the user has (Files,
 // email, a messaging app) via the standard Android share sheet — the
 // no-computer path to getting a log out of the phone.
+//
+// GeneralsX @bugfix Android port 11/07/2026 Share used to be
+// Intent.EXTRA_TEXT (inline text) -- only apps that accept plain text show
+// up as targets (no "Save to..."), and a big log risks silently failing to
+// launch anything at all (TransactionTooLargeException). Now writes the log
+// to a real file and shares it via FileProvider instead, which both apps
+// that save files and apps that accept text can handle. The old "Refresh"
+// button reread files that, in practice, are never still being written
+// while this screen is open (the crashed/exited process is dead by the
+// time you get here) -- replaced with "Clear Logs" instead, which is what
+// people actually wanted a button for.
 
 package com.generalsx.zerohour;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.FileProvider;
+
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.CharBuffer;
 
 public class LogViewerActivity extends Activity {
@@ -70,10 +86,10 @@ public class LogViewerActivity extends Activity {
         buttonRow.setOrientation(LinearLayout.HORIZONTAL);
         buttonRow.setPadding(dp(8), dp(8), dp(8), dp(8));
 
-        Button refreshButton = new Button(this);
-        refreshButton.setText("Refresh");
-        refreshButton.setOnClickListener(v -> loadLogs());
-        buttonRow.addView(refreshButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button clearButton = new Button(this);
+        clearButton.setText("Clear Logs");
+        clearButton.setOnClickListener(v -> confirmClearLogs());
+        buttonRow.addView(clearButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         Button copyButton = new Button(this);
         copyButton.setText("Copy");
@@ -86,13 +102,7 @@ public class LogViewerActivity extends Activity {
 
         Button shareButton = new Button(this);
         shareButton.setText("Share");
-        shareButton.setOnClickListener(v -> {
-            Intent share = new Intent(Intent.ACTION_SEND);
-            share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_SUBJECT, "GeneralsZH Android log");
-            share.putExtra(Intent.EXTRA_TEXT, combinedLog);
-            startActivity(Intent.createChooser(share, "Share log"));
-        });
+        shareButton.setOnClickListener(v -> shareLogAsFile());
         buttonRow.addView(shareButton, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         root.addView(buttonRow);
@@ -109,6 +119,7 @@ public class LogViewerActivity extends Activity {
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
         setContentView(root);
+        InsetUtil.applySafeInsets(root);
         loadLogs();
     }
 
@@ -136,6 +147,46 @@ public class LogViewerActivity extends Activity {
 
         combinedLog = sb.toString();
         logText().setText(combinedLog);
+    }
+
+    private void confirmClearLogs() {
+        new AlertDialog.Builder(this)
+            .setTitle("Clear Logs")
+            .setMessage("Delete the crash log and engine log files? This can't be undone.")
+            .setPositiveButton("Clear", (dialog, which) -> clearLogs())
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void clearLogs() {
+        new File(getFilesDir(), "crash.log").delete();
+        File extDir = getExternalFilesDir(null);
+        if (extDir != null) {
+            new File(extDir, "generals-stderr.log").delete();
+            new File(extDir, "generals-stderr-prev.log").delete();
+        }
+        loadLogs();
+        Toast.makeText(this, "Logs cleared.", Toast.LENGTH_SHORT).show();
+    }
+
+    private void shareLogAsFile() {
+        try {
+            File logFile = new File(getCacheDir(), "generalszh-log.txt");
+            try (FileOutputStream out = new FileOutputStream(logFile, false)) {
+                out.write(combinedLog.getBytes(StandardCharsets.UTF_8));
+            }
+
+            Uri uri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", logFile);
+
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+            share.putExtra(Intent.EXTRA_SUBJECT, "GeneralsZH Android log");
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(share, "Share log"));
+        } catch (IOException e) {
+            Toast.makeText(this, "Could not prepare log file to share: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
     private String readTail(File file) {

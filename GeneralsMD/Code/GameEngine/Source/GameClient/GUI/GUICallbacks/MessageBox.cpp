@@ -73,6 +73,13 @@ GameWindow *MessageBoxYesNoCancel(UnicodeString titleString,UnicodeString bodySt
 	return TheWindowManager->gogoMessageBox(-1,-1,-1,-1,MSG_BOX_NO | MSG_BOX_YES | MSG_BOX_CANCEL , titleString, bodyString, yesCallback, noCallback, nullptr, cancelCallback);
 }
 
+// GeneralsX @feature Android port 10/07/2026 ported from SuperHackers_GO's
+// GeneralsOnline integration.
+GameWindow *MessageBoxNoButtons(UnicodeString titleString, UnicodeString bodyString, bool bShowLogo)
+{
+	return TheWindowManager->gogoMessageBox(-1, -1, -1, -1, 0, titleString, bodyString, nullptr, nullptr, nullptr, nullptr, bShowLogo);
+}
+
 
 GameWindow *MessageBoxOkCancel(UnicodeString titleString,UnicodeString bodyString,GameWinMsgBoxFunc okCallback,GameWinMsgBoxFunc cancelCallback)///< convenience function for displaying a Message box with Ok and Cancel buttons
 {

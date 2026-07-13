@@ -37,6 +37,9 @@ GameWindow *QuitMessageBoxYesNo(UnicodeString titleString,UnicodeString bodyStri
 
 GameWindow *MessageBoxYesNoCancel(UnicodeString titleString,UnicodeString bodyString, GameWinMsgBoxFunc yesCallback, GameWinMsgBoxFunc noCallback, GameWinMsgBoxFunc cancelCallback);///< convenience function for displaying a Message box with Yes,No and Cancel buttons
 
+// GeneralsX @feature Android port 10/07/2026 ported from SuperHackers_GO's
+// GeneralsOnline integration -- used by GSMessageBoxNoButtons (GameSpyOverlay.cpp).
+GameWindow *MessageBoxNoButtons(UnicodeString titleString, UnicodeString bodyString, bool bShowLogo);  ///< convenience function for displaying a Message box without any buttons
 
 GameWindow *MessageBoxOkCancel(UnicodeString titleString,UnicodeString bodyString,GameWinMsgBoxFunc okCallback,GameWinMsgBoxFunc cancelCallback);///< convenience function for displaying a Message box with Ok and Cancel buttons
 

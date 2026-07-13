@@ -60,6 +60,17 @@ if(ANDROID)
     target_link_libraries(z_generals PRIVATE adrenotools)
 endif()
 
+# GeneralsX @feature Android port 12/07/2026 CI passes the GitHub Actions run
+# number (the same value baked into the artifact filename, e.g.
+# GeneralsXZH-android-run108.apk) via -DANDROID_CI_BUILD_NUMBER so it can be
+# logged at app startup -- without this a crash log has no way to prove which
+# build produced it, which has already caused us to misattribute a tester's
+# log to the wrong build once. Local/non-CI builds don't pass the define, so
+# default to 0.
+if(NOT DEFINED ANDROID_CI_BUILD_NUMBER)
+    set(ANDROID_CI_BUILD_NUMBER 0)
+endif()
+
 # TODO Originally referred to build host and user, replace with git info perhaps?
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/GeneratedVersion.h
 "#pragma once
@@ -67,6 +78,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/GeneratedVersion.h
 #define VERSION_LOCALBUILDNUM 0
 #define VERSION_BUILDUSER \"\"
 #define VERSION_BUILDLOC \"\"
+#define ANDROID_CI_BUILD_NUMBER ${ANDROID_CI_BUILD_NUMBER}
 "
 )
 

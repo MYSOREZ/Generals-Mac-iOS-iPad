@@ -29,6 +29,10 @@
 #pragma once
 
 #include "gamespy/gstats/gpersist.h"
+// GeneralsX @feature Android port 10/07/2026 ported from SuperHackers_GO's
+// GeneralsOnline integration (upstream added this include + the elo_* fields
+// below to this same shared Core file).
+#include "GameNetwork/GeneralsOnline/NextGenMP_defines.h"
 
 #define MAX_BUDDY_CHAT_LEN 128
 
@@ -42,6 +46,11 @@ public:
 	void reset();
 
 	Int id;
+
+#if defined(GENERALS_ONLINE) // Extra data added in GO
+	int elo_rating;
+	int elo_num_matches;
+#endif
 	PerGeneralMap wins;
 	PerGeneralMap losses;
 	PerGeneralMap games;              //first: playerTemplate #,  second: #games played (see also gamesAsRandom)

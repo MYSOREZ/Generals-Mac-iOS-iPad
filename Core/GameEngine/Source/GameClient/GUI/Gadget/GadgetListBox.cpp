@@ -1791,11 +1791,21 @@ WindowMsgHandledType GadgetListBoxSystem( GameWindow *window, UnsignedInt msg,
 		case GLM_GET_SELECTION:
 		{
 
+			// GeneralsX @bugfix Android port 11/07/2026 the 12/02/2026 "64-bit
+			// compatibility" fix above was wrong: list->selections is NOT a
+			// scalar handle being smuggled through an Int (that pattern is for
+			// item *data*, e.g. GadgetListBoxSetItemData/GetItemData) -- per
+			// GadgetListBoxGetSelected()'s own doc comment, for a multi-select
+			// listbox the caller passes a buffer and expects the ARRAY of
+			// selected indices copied into it (-1 terminated, never larger
+			// than list->listLength). Truncating the array pointer itself to
+			// 32 bits and writing that as a single Int handed every caller a
+			// wild pointer instead of real indices -- confirmed as the root
+			// cause of a real-device crash in WOLLobbyMenu.cpp's Custom Match
+			// player list (PopulateLobbyPlayerListbox), which read through
+			// that wild pointer immediately after this call.
 			if( list->multiSelect )
-				// GeneralsX @bugfix BenderAI 12/02/2026 - Cast via intptr_t for 64-bit compatibility
-				// list->selections is a pointer being stored as Int (common pattern for GUI message passing).
-				// On 64-bit Linux, pointers are 8 bytes but Int is 4 bytes. Cast through intptr_t first.
-				*(Int*)mData2 = static_cast<Int>(reinterpret_cast<intptr_t>(list->selections));
+				memcpy( (Int*)mData2, list->selections, list->listLength * sizeof(Int) );
 			else
 				*(Int*)mData2 = list->selectPos;
 
@@ -2592,6 +2602,16 @@ Int GadgetListBoxGetListLength( GameWindow *listbox )
 //=============================================================================
 Int GadgetListBoxGetMaxSelectedLength( GameWindow *listbox )
 {
+	// GeneralsX @bugfix Android port 11/07/2026 unlike every other
+	// GadgetListBoxXxx() accessor in this file, this one dereferenced
+	// `listbox` with no null check -- a caller whose window was torn down
+	// (e.g. the user backing out of a screen while an async callback that
+	// captured the listbox is still in flight) would crash here instead of
+	// getting the same safe "listbox doesn't exist" no-op the other
+	// accessors give.
+	if (!listbox)
+		return 0;
+
 	ListboxData *listboxData = (ListboxData *)listbox->winGetUserData();
 	if (listboxData)
 		return listboxData->multiSelect ? listboxData->listLength : 1;

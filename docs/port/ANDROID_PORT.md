@@ -1,13 +1,20 @@
 # Zero Hour on Android — Port Guide
 
-**Status: CI produces a real, installable APK.** GitHub Actions (§3, Option A)
-builds and links the full engine, compiles DXVK's d3d8/d3d9 for Android, and
-packages a signed APK — first achieved 07/07/2026. A device install then
-surfaced two real runtime bugs (missing `libgamespy.so`, a D3D device-creation
-crash on fresh installs — see §6) that are now fixed in source; the
-verification checklist at the bottom is the remaining on-device bring-up work,
-mirroring how the iOS port (see [`PORTING_PLAYBOOK.md`](PORTING_PLAYBOOK.md))
-was hardened.
+**Status: campaign/skirmish/Challenge run natively, and online multiplayer
+works.** GitHub Actions (§3, Option A) builds and links the full engine,
+compiles DXVK's d3d8/d3d9 for Android, and packages a signed APK on every
+push — first achieved 07/07/2026. Since then this has moved well past initial
+bring-up: **GeneralsOnline**, a from-scratch NGMP-based multiplayer backend
+(REST + WebSocket) replacing the long-dead GameSpy servers, has been built and
+wired into the original `.wnd` UI — account login, the multiplayer Welcome
+screen, Custom Match (create/browse/join, live rosters, chat), Quickmatch, My
+Persona (stats/rank), and Communicator (friends/social) all work end-to-end
+against real players on real devices, including bug reports from outside
+testers via this repo's issue tracker. §6 has the running log of what's been
+found and fixed; most of it falls into a small number of recurring bug
+classes (async-callback use-after-free, an INI-parsing gap from the
+Generals/Zero Hour code split, a memory-allocator ownership gap) rather than
+one-off mysteries — worth reading before chasing a new crash from scratch.
 
 **Related community work, worth tracking:**
 - [tarek369/GeneralsZH-Android](https://github.com/tarek369/GeneralsZH-Android)
@@ -360,17 +367,26 @@ was completely invisible without root. Addressed with three new pieces
 
 - **Gradle wrapper is not committed** (binary jar). Use a system Gradle 8.x or
   open `android/` once in Android Studio to generate it.
-- **Multiplayer**: broken in ALL native ports of this engine (cross-platform
-  float determinism); same story as macOS/iOS. Campaign/skirmish/Challenge only.
-- **Mali/Vulkan 1.1 path** (Redmi Note 8 Pro): see §2 — d3d8to9 + DXVK 1.10 is
-  the researched route if demand exists.
+- **Multiplayer works on Android** via GeneralsOnline (see the status note at
+  the top of this doc) — this is no longer the "broken everywhere, GameSpy is
+  dead" story that's still true for the untouched macOS/iOS builds. Retail LAN
+  play (cross-platform float determinism against a Windows client) remains
+  unverified, as on every other port.
+- **Mali/Vulkan 1.1 devices** (e.g. Redmi Note 8 Pro / Mali-G76): can't run the
+  DXVK 2.6 path — hardware limitation, not fixable in software. The app now
+  shows a clear native dialog ("please make sure you have DirectX 8.1 or
+  higher...") instead of silently closing, via `SDL_ShowSimpleMessageBox` in
+  `Debug.cpp`'s crash-message paths. d3d8to9 + DXVK 1.10 remains the
+  theoretical route to real Vulkan-1.1 support if demand exists.
 - **libadrenotools driver replacement**: optional future hook for non-target
   Adreno devices with broken vendor drivers (Turnip_drivers_adreno /
   AdrenoToolsDrivers repos are the driver source for that).
-- **Back button / IME**: SDL maps Back to `AC_BACK`; deciding whether it should
-  open the in-game menu is a UX pass for after bring-up. On-screen keyboard for
-  save names needs `SDL_StartTextInput` verification (the engine already gates
-  text input on entry-field focus).
+- **Back button**: fixed — SDL reports it as `AC_BACK`, which was being read
+  through a scancode variable one byte narrower than `SDL_Scancode`, truncating
+  it and misdispatching to an unrelated in-game command. Now correctly opens
+  the pause/options menu. On-screen keyboard (`SDL_StartTextInput`) for save
+  names still needs verification (the engine already gates text input on
+  entry-field focus).
 - **Performance**: no tuning expected to be needed (2003 game, 2024+ silicon),
   but `CADisableMinimumFrameDurationOnPhone`'s Android analog — high-refresh
   frame pacing via `SDL_HINT_ANDROID_LOW_LATENCY_AUDIO` and Swappy-style pacing

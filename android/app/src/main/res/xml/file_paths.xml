@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+GeneralsX @bugfix Android port 11/07/2026 backs the FileProvider declared in
+AndroidManifest.xml; exposes only the app's cache dir (where
+LogViewerActivity writes the combined log text before sharing it), not the
+whole app-private storage tree.
+-->
+<paths>
+    <cache-path name="logs" path="." />
+</paths>

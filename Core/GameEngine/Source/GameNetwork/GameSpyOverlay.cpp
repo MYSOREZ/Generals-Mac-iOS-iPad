@@ -151,6 +151,20 @@ void RaiseGSMessageBox()
 	messageBoxWindow->winBringToTop();
 }
 
+// GeneralsX @feature Android port 10/07/2026 ported from SuperHackers_GO's
+// GeneralsOnline integration (upstream added these to the same file).
+void GSMessageBoxCancel(UnicodeString title, UnicodeString message, GameWinMsgBoxFunc cancelFunc)
+{
+	ClearGSMessageBoxes();
+	messageBoxWindow = MessageBoxCancel(title, message, cancelFunc);
+}
+
+void GSMessageBoxNoButtons(UnicodeString title, UnicodeString message, bool bShowLogo)
+{
+	ClearGSMessageBoxes();
+	messageBoxWindow = MessageBoxNoButtons(title, message, bShowLogo);
+}
+
 // Overlay screens -------------------------------------
 
 /**
@@ -194,6 +208,7 @@ void GameSpyOpenOverlay( GSOverlayType overlay )
 {
 	if (overlay == GSOVERLAY_BUDDY)
 	{
+#if !defined(GENERALS_ONLINE)
 		if (!TheGameSpyBuddyMessageQueue->isConnected())
 		{
 			// not connected - is it because we were disconnected?
@@ -209,6 +224,7 @@ void GameSpyOpenOverlay( GSOverlayType overlay )
 			}
 			return;
 		}
+#endif
 		AudioEventRTS buttonClick("GUICommunicatorOpen");
 
 		if( TheAudio )

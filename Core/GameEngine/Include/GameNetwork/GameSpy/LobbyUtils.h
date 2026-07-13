@@ -45,11 +45,20 @@ void playerTemplateListBoxTooltip(GameWindow *wndListBox, WinInstanceData *instD
 
 enum GameSortType CPP_11(: Int)
 {
-	GAMESORT_ALPHA_ASCENDING = 0,
-	GAMESORT_ALPHA_DESCENDING,
-	GAMESORT_PING_ASCENDING,
-	GAMESORT_PING_DESCENDING,
+	GAMESORT_AGE_ASCENDING = 0, // was alpha
+    GAMESORT_AGE_DESCENDING,	// was alpha
+	GAMESORT_MAP_ASCENDING,		// was ping
+	GAMESORT_MAP_DESCENDING,	// was ping
 };
 
 Bool HandleSortButton( NameKeyType sortButton );
 void PopulateLobbyPlayerListbox();
+
+enum LobbyGameModeFilter CPP_11(: Int)
+{
+    LOBBY_FILTER_ALL = 0,
+    LOBBY_FILTER_1V1,
+    LOBBY_FILTER_TEAM,
+    LOBBY_FILTER_FFA,
+    LOBBY_FILTER_AOD,
+};

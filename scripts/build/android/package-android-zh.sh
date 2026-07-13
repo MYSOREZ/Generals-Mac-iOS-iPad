@@ -207,6 +207,16 @@ UseShadowDecals = yes
 UseShadowVolumes = yes
 EOF
 fi
+
+# GeneralsX @note Android port 11/07/2026 the GeneralsOnline lobby screens
+# (WOLWelcomeMenu.wnd, WOLCustomLobby.wnd, WOLQuickMatchMenu.wnd,
+# PopupPlayerInfo.wnd, WOLBuddyOverlay.wnd, OptionsMenu.wnd) are NOT custom
+# assets we ship -- the real GeneralsOnline client reuses these unmodified,
+# original Zero Hour .wnd files exactly as they already ship inside the base
+# game's own .big archives (the user's copied game data). Only the C++
+# callback/backend logic needed porting (see GUICallbacks/Menus/WOL*.cpp);
+# there is nothing to stage here.
+
 echo "==> Staged APK assets:"
 find "${ASSETS}" -type f | sed "s|${ASSETS}/|    |"
 

@@ -31,6 +31,8 @@
 
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
+#include <stdio.h>
+
 #include "Common/Debug.h"
 #include "Common/Language.h"
 #include "GameClient/Display.h"
@@ -72,6 +74,66 @@ UnsignedInt WindowLayoutCurrentVersion = 2;
 //
 static Bool sendMousePosMessages = TRUE;
 
+// GeneralsX @bugfix Android port 12/07/2026 - ring buffer of recently
+// destroyed windows, recorded at the moment of the actual free (names copied
+// out while the window is still valid). The null-m_input/m_system guards in
+// winSendInputMsg/winSendSystemMsg consult it so a device log names the exact
+// stale window instead of a bare pointer -- that name is what will pin down
+// which destroy path leaves a dangling reference in the window tree.
+static const int RECENT_DESTROY_RING_SIZE = 64;
+struct RecentDestroyEntry
+{
+	GameWindow *window;
+	char name[96];
+};
+static RecentDestroyEntry s_recentDestroys[RECENT_DESTROY_RING_SIZE] = {};
+static int s_recentDestroyNext = 0;
+
+static void recordDestroyedWindow( GameWindow *window )
+{
+	RecentDestroyEntry &entry = s_recentDestroys[s_recentDestroyNext];
+	entry.window = window;
+	const char *name = window->winGetInstanceData()->m_decoratedNameString.str();
+	snprintf(entry.name, sizeof(entry.name), "%s", (name && name[0]) ? name : "(unnamed)");
+	s_recentDestroyNext = (s_recentDestroyNext + 1) % RECENT_DESTROY_RING_SIZE;
+}
+
+static const char *findRecentlyDestroyedWindowName( GameWindow *window )
+{
+	for (int i = 0; i < RECENT_DESTROY_RING_SIZE; ++i)
+	{
+		if (s_recentDestroys[i].window == window)
+			return s_recentDestroys[i].name;
+	}
+	return nullptr;
+}
+
+// GeneralsX @bugfix Android port 12/07/2026 - see the declaration comment in
+// GameWindowManager.h for why this exists.
+void GameWindowManager::purgeModalStackEntry( GameWindow *window )
+{
+	ModalWindow *cur = m_modalHead;
+	ModalWindow *prev = nullptr;
+
+	while (cur != nullptr)
+	{
+		ModalWindow *next = cur->next;
+		if (cur->window == window)
+		{
+			if (prev != nullptr)
+				prev->next = next;
+			else
+				m_modalHead = next;
+			deleteInstance(cur);
+		}
+		else
+		{
+			prev = cur;
+		}
+		cur = next;
+	}
+}
+
 //-------------------------------------------------------------------------------------------------
 /** Process windows waiting to be destroyed */
 //-------------------------------------------------------------------------------------------------
@@ -103,8 +165,7 @@ void GameWindowManager::processDestroyList()
 		if( m_keyboardFocus == doDestroy )
 			winSetFocus( nullptr );
 
-		if( (m_modalHead != nullptr) && (doDestroy == m_modalHead->window) )
-			winUnsetModal( m_modalHead->window );
+		purgeModalStackEntry( doDestroy );
 
 		if( m_currMouseRgn == doDestroy )
 			m_currMouseRgn = nullptr;
@@ -112,10 +173,30 @@ void GameWindowManager::processDestroyList()
 		if( m_grabWindow == doDestroy )
 			m_grabWindow = nullptr;
 
+		// GeneralsX @bugfix Android port 12/07/2026 - m_loneWindow (the open
+		// combo-box/dropdown overlay) was the one tracked-window pointer NOT
+		// cleared here, unlike m_mouseCaptor/m_currMouseRgn/m_grabWindow/
+		// m_keyboardFocus right above. A destroyed-but-still-referenced
+		// m_loneWindow is a genuine dangling GameWindow* -- winProcessMouseEvent
+		// dereferences it directly (m_loneWindow->winIsChild(...)) with no
+		// liveness check beyond null. On this Android build RTS_GAMEMEMORY_ENABLE
+		// is OFF (see CMakePresets.json's android-vulkan preset comment: the
+		// pool allocator conflicts with OpenAL/libc++ freeing through it), so
+		// GameWindow objects come from plain malloc/free instead of a same-size
+		// pool -- a freed slot is reused by whatever unrelated allocation comes
+		// next, so a stale m_loneWindow now reads back as genuine garbage
+		// instead of "probably still another GameWindow". This matches a real
+		// device crash: a wild `this` inside GameWindow::winSetUserData(),
+		// reached from deep in the mouse-event dispatch chain.
+		if( m_loneWindow == doDestroy )
+			m_loneWindow = nullptr;
+
 		// send the destroy message to the window we're about to kill
 		winSendSystemMsg( doDestroy, GWM_DESTROY, 0, 0 );
 
 		DEBUG_ASSERTCRASH(doDestroy->winGetUserData() == nullptr, ("Win user data is expected to be deleted now"));
+
+		recordDestroyedWindow( doDestroy );
 
 		// free the memory
 		deleteInstance(doDestroy);
@@ -702,6 +783,20 @@ WindowMsgHandledType GameWindowManager::winSendSystemMsg( GameWindow *window,
 	if( msg != GWM_DESTROY && BitIsSet( window->m_status, WIN_STATUS_DESTROYED ) )
 		return MSG_IGNORED;
 
+	// GeneralsX @bugfix Android port 12/07/2026 - see the matching guard in
+	// winSendInputMsg() below for why this can legitimately be null on a
+	// live device (stale pointer to a freed, pooled GameWindow).
+	if( window->m_system == nullptr )
+	{
+		// fprintf, not DEBUG_LOG: DEBUG_LOG is compiled out of release builds,
+		// and this diagnostic exists precisely for release device logs.
+		const char *destroyedName = findRecentlyDestroyedWindowName( window );
+		fprintf(stderr, "winSendSystemMsg: window %p has null m_system (stale/freed window, recently destroyed as: %s), ignoring msg %u\n",
+			(void*)window, destroyedName ? destroyedName : "(not in recent-destroy ring)", msg);
+		fflush(stderr);
+		return MSG_IGNORED;
+	}
+
 	return window->m_system( window, msg, mData1, mData2 );
 
 }
@@ -720,6 +815,29 @@ WindowMsgHandledType GameWindowManager::winSendInputMsg( GameWindow *window,
 
 	if( msg != GWM_DESTROY && BitIsSet( window->m_status, WIN_STATUS_DESTROYED ) )
 		return MSG_IGNORED;
+
+	// GeneralsX @bugfix Android port 12/07/2026 - a device crash resolved
+	// (via addr2line against the exact build's libmain.so) to a call through
+	// window->m_input with PC==0, i.e. a genuinely null callback, even though
+	// GameWindow's constructor unconditionally sets it via
+	// winSetInputFunc(TheWindowManager->getDefaultInput()), which itself can
+	// never return null (GameWinDefaultInput is a plain extern function, not
+	// a resettable variable). That only leaves a GameWindow whose memory was
+	// already freed back to its MemoryPoolObject pool and not yet
+	// reallocated -- a stale pointer still reachable from the window tree
+	// (hit-tested by findWindowUnderMouse) racing a destroy that didn't fully
+	// unlink it first. Root cause needs a live debugger session to pin down;
+	// this guard stops the crash in the meantime.
+	if( window->m_input == nullptr )
+	{
+		// fprintf, not DEBUG_LOG: DEBUG_LOG is compiled out of release builds,
+		// and this diagnostic exists precisely for release device logs.
+		const char *destroyedName = findRecentlyDestroyedWindowName( window );
+		fprintf(stderr, "winSendInputMsg: window %p has null m_input (stale/freed window, recently destroyed as: %s), ignoring msg %u\n",
+			(void*)window, destroyedName ? destroyedName : "(not in recent-destroy ring)", msg);
+		fflush(stderr);
+		return MSG_IGNORED;
+	}
 
 	return window->m_input( window, msg, mData1, mData2 );
 
@@ -1422,14 +1540,19 @@ Int GameWindowManager::winDestroy( GameWindow *window )
 	if( m_keyboardFocus == window )
 		winSetFocus( nullptr );
 
-	if( (m_modalHead != nullptr) && (window == m_modalHead->window) )
-		winUnsetModal( m_modalHead->window );
+	purgeModalStackEntry( window );
 
 	if( m_currMouseRgn == window )
 		m_currMouseRgn = nullptr;
 
 	if( m_grabWindow == window )
 		m_grabWindow = nullptr;
+
+	// GeneralsX @bugfix Android port 12/07/2026 - see the matching fix in
+	// processDestroyList() above for why m_loneWindow needs the same
+	// liveness clear as the four pointers just above.
+	if( m_loneWindow == window )
+		m_loneWindow = nullptr;
 
 	for( child = window->m_child; child; child = next )
 	{

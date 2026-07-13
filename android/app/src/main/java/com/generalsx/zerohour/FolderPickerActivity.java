@@ -100,6 +100,7 @@ public class FolderPickerActivity extends Activity {
 
         root.addView(buttonRow);
         setContentView(root);
+        InsetUtil.applySafeInsets(root);
 
         listView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
             String name = (String) parent.getItemAtPosition(position);

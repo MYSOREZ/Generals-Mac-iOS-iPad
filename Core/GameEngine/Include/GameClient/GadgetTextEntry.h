@@ -122,3 +122,20 @@ inline Color GadgetTextEntryGetHiliteColor( GameWindow *g )								{ return g->w
 inline Color GadgetTextEntryGetHiliteBorderColor( GameWindow *g )					{ return g->winGetHiliteBorderColor( 0 ); }
 
 // EXTERNALS //////////////////////////////////////////////////////////////////
+
+// GeneralsX @note Android port 11/07/2026 upstream declares this here too
+// (an odd home for it, but matched for parity) -- used by LobbyUtils.cpp's
+// GeneralsOnline-aware game row animation for the Custom Match server list.
+struct GameRowAnim
+{
+	float currentIndex;
+	float targetIndex;
+	bool  alive;
+
+	GameRowAnim()
+		: currentIndex(0.0f)
+		, targetIndex(0.0f)
+		, alive(false)
+	{
+	}
+};

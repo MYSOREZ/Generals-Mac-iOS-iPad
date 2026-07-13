@@ -102,5 +102,10 @@ dependencies {
     // GeneralsZHActivity (the actual game surface) stays on its own plain
     // fullscreen theme and never touches these widgets.
     implementation 'com.google.android.material:material:1.12.0'
+
+    // GeneralsX @bugfix Android port 11/07/2026 explicit dependency for
+    // WindowInsetsCompat (InsetUtil.java) -- pulled in transitively by
+    // Material already, but declared directly since we call its APIs.
+    implementation 'androidx.core:core:1.13.1'
 }
 

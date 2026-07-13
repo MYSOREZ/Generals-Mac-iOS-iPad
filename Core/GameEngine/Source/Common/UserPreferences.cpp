@@ -242,7 +242,7 @@ void UserPreferences::setAsciiString(AsciiString key, AsciiString val)
 QuickMatchPreferences::QuickMatchPreferences()
 {
 	AsciiString userPrefFilename;
-	Int localProfile = TheGameSpyInfo->getLocalProfileID();
+	Int localProfile = TheGameSpyInfo ? TheGameSpyInfo->getLocalProfileID() : 0;
 	userPrefFilename.format("GeneralsOnline\\QMPref%d.ini", localProfile);
 	load(userPrefFilename);
 }
@@ -427,13 +427,31 @@ Int QuickMatchPreferences::getSide()
 CustomMatchPreferences::CustomMatchPreferences()
 {
 	AsciiString userPrefFilename;
-	Int localProfile = TheGameSpyInfo->getLocalProfileID();
+	Int localProfile = TheGameSpyInfo ? TheGameSpyInfo->getLocalProfileID() : 0;
 	userPrefFilename.format("GeneralsOnline\\CustomPref%d.ini", localProfile);
 	load(userPrefFilename);
 }
 
 CustomMatchPreferences::~CustomMatchPreferences()
 {
+}
+
+AsciiString CustomMatchPreferences::getLastLobbyName() const
+{
+	CustomMatchPreferences::const_iterator it = find("LastLobbyName");
+	if (it == end())
+	{
+		return AsciiString::TheEmptyString;
+	}
+
+	AsciiString ret = it->second;
+	ret.trim();
+	return ret;
+}
+
+void CustomMatchPreferences::setLastLobbyName(const AsciiString& name)
+{
+	(*this)["LastLobbyName"] = name;
 }
 
 void CustomMatchPreferences::setLastLadder(const AsciiString& addr, UnsignedShort port)
@@ -776,7 +794,7 @@ void CustomMatchPreferences::setUseStats( Bool useStats )
 GameSpyMiscPreferences::GameSpyMiscPreferences()
 {
 	AsciiString userPrefFilename;
-	Int localProfile = TheGameSpyInfo->getLocalProfileID();
+	Int localProfile = TheGameSpyInfo ? TheGameSpyInfo->getLocalProfileID() : 0;
 	userPrefFilename.format("GeneralsOnline\\GSMiscPref%d.ini", localProfile);
 	load(userPrefFilename);
 }
@@ -822,8 +840,7 @@ Int GameSpyMiscPreferences::getMaxMessagesPerUpdate()
 IgnorePreferences::IgnorePreferences()
 {
 	AsciiString userPrefFilename;
-//	if(!TheGameSpyInfo)
-	Int localProfile = TheGameSpyInfo->getLocalProfileID();
+	Int localProfile = TheGameSpyInfo ? TheGameSpyInfo->getLocalProfileID() : 0;
 	userPrefFilename.format("GeneralsOnline\\IgnorePref%d.ini", localProfile);
 	load(userPrefFilename);
 }

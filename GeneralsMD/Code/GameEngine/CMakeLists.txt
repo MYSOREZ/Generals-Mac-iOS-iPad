@@ -1111,6 +1111,60 @@ set(GAMEENGINE_SRC
 #    Source/GameNetwork/GameSpy/Thread/ThreadUtils.cpp
 #    Source/GameNetwork/GameSpyOverlay.cpp
     Source/GameNetwork/GUIUtil.cpp
+
+    # GeneralsX @feature Android port 10/07/2026 GeneralsOnline (playgenerals.online)
+    # multiplayer backend, replacing the dead GameSpy servers behind MainMenu's
+    # Online button. First pass: auth (session bootstrap from the Android
+    # launcher's already-completed login) + lobby/rooms/social/stats/matchmaking
+    # over a single libcurl-backed WebSocket. The P2P match-transport layer
+    # (NetworkMesh/NetworkBitstream/NetworkPacket/NextGenTransport, built on
+    # Valve GameNetworkingSockets) is deliberately NOT ported yet -- see
+    # NGMP_include.h -- so this only gets you to "connected, browsing lobbies",
+    # not to an actual match. Ported from GeneralsOnlineDevelopmentTeam/SuperHackers_GO
+    # (branch go_int, commit 32ae5135), which is upstream TheSuperHackers/GeneralsGameCode
+    # plus one GO-integration commit, adapted here for a headless (non-Windows) build.
+    Include/GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.h
+    Include/GameNetwork/GeneralsOnline/GeneralsOnline_Settings.h
+    Include/GameNetwork/GeneralsOnline/HTTP/HTTPManager.h
+    Include/GameNetwork/GeneralsOnline/HTTP/HTTPRequest.h
+    Include/GameNetwork/GeneralsOnline/NGMPGame.h
+    Include/GameNetwork/GeneralsOnline/NGMP_include.h
+    Include/GameNetwork/GeneralsOnline/NGMP_interfaces.h
+    Include/GameNetwork/GeneralsOnline/NGMP_types.h
+    # GeneralsX @feature Android port 12/07/2026 P2P match transport
+    # (previously deferred, see NGMP_include.h): NetworkMesh + NextGenTransport
+    # on Valve GameNetworkingSockets, ported from the same go_int snapshot
+    # (32ae5135) as the rest of the module.
+    Include/GameNetwork/GeneralsOnline/NetworkBitstream.h
+    Include/GameNetwork/GeneralsOnline/NetworkMesh.h
+    Include/GameNetwork/GeneralsOnline/NetworkPacket.h
+    Include/GameNetwork/GeneralsOnline/NextGenMP_defines.h
+    Include/GameNetwork/GeneralsOnline/NextGenTransport.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_Auth.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_Init.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_LobbyInterface.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_MatchmakingInterface.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_RoomsInterface.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_SocialInterface.h
+    Include/GameNetwork/GeneralsOnline/OnlineServices_StatsInterface.h
+    Include/GameNetwork/GeneralsOnline/PluginInterfaces.h
+    Source/GameNetwork/GeneralsOnline/GeneralsOnline_AndroidGlue.cpp
+    Source/GameNetwork/GeneralsOnline/GeneralsOnline_Settings.cpp
+    Source/GameNetwork/GeneralsOnline/HTTP/HTTPManager.cpp
+    Source/GameNetwork/GeneralsOnline/HTTP/HTTPRequest.cpp
+    Source/GameNetwork/GeneralsOnline/NGMPGame.cpp
+    Source/GameNetwork/GeneralsOnline/NGMP_Helpers.cpp
+    Source/GameNetwork/GeneralsOnline/NetworkBitstream.cpp
+    Source/GameNetwork/GeneralsOnline/NetworkMesh.cpp
+    Source/GameNetwork/GeneralsOnline/NextGenTransport.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_Auth.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_Init.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_LobbyInterface.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_MatchmakingInterface.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_RoomsInterface.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_SocialInterface.cpp
+    Source/GameNetwork/GeneralsOnline/OnlineServices_StatsInterface.cpp
+    Source/GameNetwork/GeneralsOnline/PluginInterfaces.cpp
 #    Source/GameNetwork/IPEnumeration.cpp
 #    Source/GameNetwork/LANAPI.cpp
 #    Source/GameNetwork/LANAPICallbacks.cpp
@@ -1172,6 +1226,30 @@ if(SAGE_USE_SDL3)
     target_link_libraries(z_gameengine PUBLIC sdl3lib)
 endif()
 
+# GeneralsX @feature Android port 10/07/2026 GeneralsOnline's HTTP/WebSocket
+# layer needs libcurl regardless of SAGE_UPDATE_CHECK (which gates the
+# unrelated in-game update-checker's own curl usage, off for android-vulkan).
+# curl is already an unconditional vcpkg.json dependency on !windows platforms,
+# so find_package here just needs to actually run for this target.
+find_package(CURL CONFIG REQUIRED)
+target_link_libraries(z_gameengine PUBLIC CURL::libcurl)
+
+# GeneralsX @feature Android port 12/07/2026 Valve GameNetworkingSockets for
+# the GeneralsOnline P2P match transport (NetworkMesh/NextGenTransport, ported
+# from GeneralsOnlineDevelopmentTeam/GameClient). vcpkg's 1.6.0 port ships the
+# native ICE client (STUN/TURN) as a default feature, so no external
+# steamwebrtc/webrtc-lite binary is needed -- upstream's Windows build predates
+# that and still vendors webrtc-lite.lib. Our static triplet exports the _s
+# target (which also injects STEAMNETWORKINGSOCKETS_STATIC_LINK for consumers).
+if(ANDROID)
+    find_package(GameNetworkingSockets CONFIG REQUIRED)
+    if(TARGET GameNetworkingSockets::GameNetworkingSockets_s)
+        target_link_libraries(z_gameengine PUBLIC GameNetworkingSockets::GameNetworkingSockets_s)
+    else()
+        target_link_libraries(z_gameengine PUBLIC GameNetworkingSockets::GameNetworkingSockets)
+    endif()
+endif()
+
 target_include_directories(z_gameengine PRIVATE
     Include/Precompiled
 )
@@ -1193,3 +1271,19 @@ target_precompile_headers(z_gameengine PRIVATE
     [["Utility/CppMacros.h"]] # Must be first, to be removed when abandoning VC6
     Include/Precompiled/PreRTS.h
 )
+
+# GeneralsX @bugfix Android port 07/11/2026 - upstream defines GENERALS_ONLINE globally via the
+# compiler command line (see go_client/main's GeneralsMD/Code/GameEngine/CMakeLists.txt), not via
+# a header #define. Several of our .cpp files check "#if defined(GENERALS_ONLINE)" before the NGMP
+# headers that #define it (as a fallback) get included, so without this, that check can silently
+# resolve to the wrong branch depending on each file's own #include order (e.g. SetLookAtPlayer's
+# declaration in PersistentStorageDefs.h picking the non-GeneralsOnline AsciiString overload).
+add_compile_definitions(GENERALS_ONLINE)
+
+# GeneralsX @feature Android port 12/07/2026 activates the P2P match-transport
+# call sites that were ported behind this guard while the NetworkMesh/
+# NextGenTransport layer itself was still deferred. With the layer now ported
+# (GameNetworkingSockets 1.6.0 + native ICE), internet matches get a real
+# transport instead of the legacy UDP one binding to a garbage IP and hanging
+# the match-start handshake forever.
+add_compile_definitions(GENERALS_ONLINE_ENABLE_P2P_TRANSPORT)

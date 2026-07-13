@@ -647,7 +647,8 @@ SDL3GameEngine::SDL3GameEngine()
 	  m_IsInitialized(false),
 	  m_IsActive(false),
 	  m_IsTextInputActive(false),
-	  m_TextInputFocusWindow(nullptr)
+	  m_TextInputFocusWindow(nullptr),
+	  m_PendingTextInputRearmFrames(0)
 {
 	fprintf(stderr, "DEBUG: SDL3GameEngine::SDL3GameEngine() created\n");
 }
@@ -797,6 +798,16 @@ void SDL3GameEngine::pollSDL3Events(void)
 		return;
 	}
 
+#if defined(SAGE_MOBILE_PLATFORM)
+	// GeneralsX @bugfix Android port 11/07/2026 - Age the tap-rearm window by one
+	// game frame (not one SDL event -- pollSDL3Events() can process several events
+	// per call). See m_PendingTextInputRearmFrames in SDL3GameEngine.h for why this
+	// needs to be a short window rather than a same-call flag.
+	if (m_PendingTextInputRearmFrames > 0) {
+		--m_PendingTextInputRearmFrames;
+	}
+#endif
+
 	updateTextInputState();
 
 	SDL_Event event;
@@ -904,6 +915,15 @@ void SDL3GameEngine::pollSDL3Events(void)
 			case SDL_EVENT_FINGER_MOTION:
 			case SDL_EVENT_FINGER_UP:
 			case SDL_EVENT_FINGER_CANCELED:
+				// GeneralsX @bugfix Android port 11/07/2026 - A fresh touch-down or a
+				// touch-up (the clean-tap case dispatches its synthetic click on UP, see
+				// handleTouchEvent()) is a candidate to (re)open the on-screen keyboard.
+				// Set on both since the eventual entry-field focus change is processed a
+				// few frames later by GameEngine::update(), not synchronously here -- see
+				// updateTextInputState() and m_PendingTextInputRearmFrames.
+				if (event.type == SDL_EVENT_FINGER_DOWN || event.type == SDL_EVENT_FINGER_UP) {
+					m_PendingTextInputRearmFrames = 20;
+				}
 				if (TheMouse && m_SDLWindow) {
 					SDL3Mouse* mouse = dynamic_cast<SDL3Mouse*>(TheMouse);
 					if (mouse) {
@@ -947,20 +967,51 @@ void SDL3GameEngine::updateTextInputState(void)
 	const Bool wantsTextInput =
 		focusedWindow != nullptr && BitIsSet(focusedWindow->winGetStyle(), GWS_ENTRY_FIELD);
 
-	if (wantsTextInput) {
-		if (!m_IsTextInputActive) {
-			if (SDL_StartTextInput(m_SDLWindow)) {
-				m_IsTextInputActive = true;
-			}
-		}
-		m_TextInputFocusWindow = focusedWindow;
-	} else {
+	if (!wantsTextInput) {
 		if (m_IsTextInputActive) {
 			SDL_StopTextInput(m_SDLWindow);
 			m_IsTextInputActive = false;
 		}
 		m_TextInputFocusWindow = nullptr;
+		return;
 	}
+
+	m_TextInputFocusWindow = focusedWindow;
+
+#if defined(SAGE_MOBILE_PLATFORM)
+	// GeneralsX @bugfix Android port 11/07/2026 - Only (re)open the on-screen keyboard
+	// in direct response to a recent, deliberate tap (m_PendingTextInputRearmFrames),
+	// never just because a field happens to be focused -- e.g. a screen's default
+	// focus assignment on creation must NOT pop the keyboard on its own. An earlier
+	// version of this fix polled SDL_ScreenKeyboardShown() unconditionally every
+	// frame to resync after an OS-driven dismiss, but that raced the keyboard's own
+	// show animation (StartTextInput() is async) and caused a stop/start fight with
+	// itself several times in a row on real devices. Gating the resync to only run
+	// inside this once-per-tap block fixes both: no auto-open, and no self-induced
+	// flicker.
+	if (m_PendingTextInputRearmFrames > 0) {
+		if (m_IsTextInputActive && !SDL_ScreenKeyboardShown(m_SDLWindow)) {
+			// OS dismissed it since the last tap without us being told -- resync
+			// SDL's own state before asking it to show again, otherwise
+			// SDL_StartTextInput() silently no-ops (it only calls into the
+			// platform layer on the false->true edge of its internal flag).
+			SDL_StopTextInput(m_SDLWindow);
+			m_IsTextInputActive = false;
+		}
+		if (!m_IsTextInputActive) {
+			if (SDL_StartTextInput(m_SDLWindow)) {
+				m_IsTextInputActive = true;
+			}
+		}
+		m_PendingTextInputRearmFrames = 0;
+	}
+#else
+	if (!m_IsTextInputActive) {
+		if (SDL_StartTextInput(m_SDLWindow)) {
+			m_IsTextInputActive = true;
+		}
+	}
+#endif
 }
 
 // GeneralsX @bugfix felipebraz 01/04/2026 Forward SDL UTF-8 text input through existing GWM_IME_CHAR path.

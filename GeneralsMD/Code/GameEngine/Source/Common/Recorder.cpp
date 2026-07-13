@@ -43,6 +43,10 @@
 #include "GameNetwork/GameSpy/PeerDefs.h"
 #include "GameNetwork/networkutil.h"
 #include "GameLogic/GameLogic.h"
+#if defined(GENERALS_ONLINE)
+#include "GameNetwork/GeneralsOnline/NGMPGame.h"
+extern NGMPGame* TheNGMPGame;
+#endif
 #include "Common/RandomValue.h"
 #include "Common/CRCDebug.h"
 #include "Common/OptionPreferences.h"
@@ -604,8 +608,29 @@ void RecorderClass::startRecording(GameDifficulty diff, Int originalGameMode, In
 		}
 		else
 		{
-			theSlotList = GameInfoToAsciiString(TheGameSpyGame);
-			localIndex = TheGameSpyGame->getLocalSlotNum();
+			// GeneralsX @bugfix Android port 13/07/2026 - a real device crash
+			// (fault_addr=0x0 inside this function) traced straight to this
+			// unconditional TheGameSpyGame->getLocalSlotNum(): TheGameSpyGame
+			// is declared and default-initialized to nullptr
+			// (GameSpyGameInfo.cpp) and, on this GeneralsOnline-based fork, is
+			// never assigned anywhere for an internet game -- the live game
+			// object for those is TheNGMPGame instead. This unconditional
+			// dereference crashed the instant a P2P match actually started
+			// (TheNetwork non-null, TheLAN null -> this branch), right as
+			// GameLogic::update() kicked off recording for the new match.
+#if defined(GENERALS_ONLINE)
+			if (TheNGMPGame)
+			{
+				theSlotList = GameInfoToAsciiString(TheNGMPGame);
+				localIndex = TheNGMPGame->getLocalSlotNum();
+			}
+			else
+#endif
+			if (TheGameSpyGame)
+			{
+				theSlotList = GameInfoToAsciiString(TheGameSpyGame);
+				localIndex = TheGameSpyGame->getLocalSlotNum();
+			}
 		}
 	}
 	else

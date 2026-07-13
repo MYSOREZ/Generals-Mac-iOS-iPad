@@ -71,7 +71,17 @@ int hexDigitValue(char c) {
 	return 0;
 }
 
-static char s_mapsBuf[65536];
+// GeneralsX @bugfix Android port 12/07/2026 - 64KB was too small: a build
+// this size (DXVK, GNS + its ICE/signaling worker threads, curl, freetype,
+// SDL3, etc.) routinely produces a /proc/self/maps well past 64KB, so the
+// read loop below silently truncated before reaching the entries needed to
+// resolve the crash PC/LR/early backtrace frames -- confirmed by comparing
+// a real device crash log (PC, LR and backtrace[0..3] all "no matching
+// entry") against the same build's unstripped libmain.so, where backtrace[4]
+// onward (present in the captured portion) resolved cleanly to ordinary,
+// uncorrupted call frames (SDL_main -> GameMain -> SDL3GameEngine::execute),
+// i.e. the process wasn't corrupted, the maps read just ran out of buffer.
+static char s_mapsBuf[1 << 20];
 
 bool findLibraryForAddress(uintptr_t pc, char *outName, size_t outNameLen, uintptr_t *outOffset) {
 	int fd = open("/proc/self/maps", O_RDONLY);
@@ -172,6 +182,35 @@ void appendCrashLog(const char *message, size_t length) {
 	close(fd);
 }
 
+// GeneralsX @bugfix Android port 11/07/2026 Two real-device crashes in a row
+// resolved to "no matching /proc/self/maps entry" for PC alone -- a wild
+// jump (corrupted vtable/function pointer or a call through freed memory),
+// not something a single address can diagnose. Log LR (x30, the return
+// address at the moment of the bad call/branch) and walk the AArch64
+// frame-pointer chain (x29 -> [saved x29, saved x30]) a few frames up: even
+// when the jump target itself is garbage, the caller that made the bad call
+// is usually still a valid, resolvable address, since the CPU sets LR
+// before branching. Frame-pointer chains are kept by default by the NDK
+// clang toolchain for arm64, so this is a plain, no-libunwind backtrace.
+void logResolvedAddress(const char *label, uintptr_t addr) {
+	char buf[256];
+	if (addr == 0) {
+		return;
+	}
+	char libName[192];
+	uintptr_t libOffset = 0;
+	int len;
+	if (findLibraryForAddress(addr, libName, sizeof(libName), &libOffset)) {
+		len = snprintf(buf, sizeof(buf), "%s=%p is in %s+0x%lx\n",
+			label, (void *)addr, libName, (unsigned long)libOffset);
+	} else {
+		len = snprintf(buf, sizeof(buf), "%s=%p (no matching /proc/self/maps entry)\n", label, (void *)addr);
+	}
+	if (len > 0) {
+		appendCrashLog(buf, (size_t)len < sizeof(buf) ? (size_t)len : sizeof(buf) - 1);
+	}
+}
+
 void androidCrashHandler(int sig, siginfo_t *info, void *ucontext) {
 	char buf[512];
 	const void *faultAddr = (info != nullptr) ? info->si_addr : nullptr;
@@ -186,21 +225,34 @@ void androidCrashHandler(int sig, siginfo_t *info, void *ucontext) {
 
 #if defined(__aarch64__)
 	uintptr_t pc = (ucontext != nullptr) ? (uintptr_t)((ucontext_t *)ucontext)->uc_mcontext.pc : 0;
-	if (pc != 0) {
-		char libName[192];
-		uintptr_t libOffset = 0;
-		if (findLibraryForAddress(pc, libName, sizeof(libName), &libOffset)) {
-			int pcLen = snprintf(buf, sizeof(buf),
-				"crash PC=%p is in %s+0x%lx (symbolize with: addr2line -f -C -e <that .so> 0x%lx)\n",
-				(void *)pc, libName, (unsigned long)libOffset, (unsigned long)libOffset);
-			if (pcLen > 0) {
-				appendCrashLog(buf, (size_t)pcLen < sizeof(buf) ? (size_t)pcLen : sizeof(buf) - 1);
+	uintptr_t lr = (ucontext != nullptr) ? (uintptr_t)((ucontext_t *)ucontext)->uc_mcontext.regs[30] : 0;
+	uintptr_t fp = (ucontext != nullptr) ? (uintptr_t)((ucontext_t *)ucontext)->uc_mcontext.regs[29] : 0;
+	logResolvedAddress("crash PC", pc);
+	logResolvedAddress("crash LR", lr);
+
+	if (fp != 0) {
+		uintptr_t frame = fp;
+		for (int i = 0; i < 16; ++i) {
+			if (frame == 0 || (frame & 0xF) != 0) {
+				break;
 			}
-		} else {
-			int pcLen = snprintf(buf, sizeof(buf), "crash PC=%p (no matching /proc/self/maps entry)\n", (void *)pc);
-			if (pcLen > 0) {
-				appendCrashLog(buf, (size_t)pcLen < sizeof(buf) ? (size_t)pcLen : sizeof(buf) - 1);
+			// A corrupted fp could point anywhere; this read can itself fault.
+			// That's acceptable here -- every frame resolved before that point
+			// has already been flushed to disk by appendCrashLog(), so a second
+			// fault just ends the backtrace early instead of losing everything.
+			uintptr_t *pFrame = (uintptr_t *)frame;
+			uintptr_t savedFP = pFrame[0];
+			uintptr_t savedLR = pFrame[1];
+			if (savedLR == 0) {
+				break;
 			}
+			char label[24];
+			snprintf(label, sizeof(label), "backtrace[%d]", i);
+			logResolvedAddress(label, savedLR);
+			if (savedFP <= frame || savedFP - frame > (1u << 20)) {
+				break;
+			}
+			frame = savedFP;
 		}
 	}
 #endif

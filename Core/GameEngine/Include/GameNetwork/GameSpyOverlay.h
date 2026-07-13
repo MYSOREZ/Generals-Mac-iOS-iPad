@@ -41,6 +41,11 @@ void GSMessageBoxOkCancel(UnicodeString title, UnicodeString message, GameWinMsg
 void GSMessageBoxYesNo(UnicodeString title, UnicodeString message, GameWinMsgBoxFunc yesFunc, GameWinMsgBoxFunc noFunc);	///< Display a Message box with Yes/No buttons and track it
 void RaiseGSMessageBox();		///< Bring GS message box to the foreground (if we transition screens while a message box is up)
 
+// GeneralsX @feature Android port 10/07/2026 ported from SuperHackers_GO's
+// GeneralsOnline integration (upstream added these to the same file).
+void GSMessageBoxCancel(UnicodeString title, UnicodeString message, GameWinMsgBoxFunc cancelFunc);	///< Display a Message box with Cancel button and track it
+void GSMessageBoxNoButtons(UnicodeString title, UnicodeString message, bool bShowLogo);	///< Display a Message box with no buttons and track it
+
 enum GSOverlayType CPP_11(: Int)
 {
 	GSOVERLAY_PLAYERINFO,

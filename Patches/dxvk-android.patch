@@ -127,3 +127,55 @@ index c432df0..2c1ebc2 100644
        StorageList* list = m_next;
        m_next = list->next;
        list->~StorageList();
+diff --git a/src/wsi/sdl3/wsi_window_sdl3.cpp b/src/wsi/sdl3/wsi_window_sdl3.cpp
+index 10fca47..e9129c6 100644
+--- a/src/wsi/sdl3/wsi_window_sdl3.cpp
++++ b/src/wsi/sdl3/wsi_window_sdl3.cpp
+@@ -11,6 +11,10 @@
+ #include <windows.h>
+ #include <SDL3/SDL_vulkan.h>
+ 
++// GeneralsX @bugfix Android port 13/07/2026 - see createSurface() below.
++#include <chrono>
++#include <thread>
++
+ namespace dxvk::wsi {
+ 
+   void Sdl3WsiDriver::getWindowSize(
+@@ -168,6 +172,36 @@ namespace dxvk::wsi {
+           VkSurfaceKHR*             pSurface) {
+     SDL_Window* window = fromHwnd(hWindow);
+ 
++    if (window == nullptr)
++      return VK_ERROR_OUT_OF_HOST_MEMORY;
++
++#if defined(__ANDROID__)
++    // GeneralsX @bugfix Android port 13/07/2026 - a real device crash traced
++    // (via addr2line against the exact build's DXVK .so) to this exact call:
++    // SDL_Vulkan_CreateSurface() segfaulting several frames deep inside the
++    // Android system libvulkan.so loader (fault_addr near-null), specifically
++    // when this createSurface() runs for a presenter created right as a match
++    // starts loading -- i.e. not the very first surface of the session (menus
++    // had already rendered fine), but a later one, most likely triggered by a
++    // resolution/render-target change on match start forcing DXVK to tear
++    // down and recreate its presenter while the underlying ANativeWindow is
++    // itself mid-recreation on the Android side. It reproduced on 2 of 4 app
++    // launches (same action each time) and did not reproduce once the window
++    // had settled. SDL3Main.cpp already works around the same class of
++    // Android surface-timing race elsewhere (polling for the window to
++    // report its landscape size before injecting resolution); mirror that
++    // pattern here: SDL_GetWindowSize() reporting a real size is the
++    // documented SDL3 signal that a surface is actually attached, so wait
++    // for that before handing the window to SDL_Vulkan_CreateSurface instead
++    // of assuming a live SDL_Window* means a live native surface.
++    int w = 0, h = 0;
++    for (int attempt = 0; attempt < 20; ++attempt) {
++      if (SDL_GetWindowSize(window, &w, &h) && w > 0 && h > 0)
++        break;
++      std::this_thread::sleep_for(std::chrono::milliseconds(50));
++    }
++#endif
++
+     return SDL_Vulkan_CreateSurface(window, instance, nullptr, pSurface)
+       ? VK_SUCCESS : VK_ERROR_OUT_OF_HOST_MEMORY;
+   }

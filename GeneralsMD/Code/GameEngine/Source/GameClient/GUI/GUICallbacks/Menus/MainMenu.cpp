@@ -72,6 +72,7 @@
 
 #include "GameNetwork/DownloadManager.h"
 #include "GameNetwork/GameSpy/MainMenuUtils.h"
+#include "GameNetwork/GeneralsOnline/OnlineServices_Init.h"
 
 #include "GameClient/InGameUI.h"
 
@@ -228,6 +229,8 @@ extern Bool dispChanged;
 void diffReverseSide();
 void HandleCanceledDownload( Bool resetDropDown )
 {
+	NGMP_OnlineServicesManager::GetInstance()->CancelUpdate();
+
 	buttonPushed = FALSE;
 	if (resetDropDown)
 	{
@@ -1367,6 +1370,9 @@ WindowMsgHandledType MainMenuSystem( GameWindow *window, UnsignedInt msg,
 
 			GameWindow *control = (GameWindow *)mData1;
 			Int controlID = control->winGetWindowId();
+			fprintf(stderr, "DEBUG-UI: MainMenuSystem GBM_SELECTED control='%s' buttonPushed=%d\n",
+				KEYNAME((NameKeyType)controlID).str(), (int)buttonPushed);
+			fflush(stderr);
 
 			if(buttonPushed)
 				break;

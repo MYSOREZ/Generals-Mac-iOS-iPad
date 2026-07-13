@@ -29,6 +29,7 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
 #include <cstdint>
+#include <vector>
 #include "Common/AudioEventRTS.h"
 #include "Common/INI.h"
 #include "GameClient/GameText.h"
@@ -149,9 +150,15 @@ Bool GameSpyInfo::sendChat( UnicodeString message, Bool isAction, GameWindow *pl
 		}
 
 		// Get the selections (is this a private message?)
+		// GeneralsX @bugfix Android port 11/07/2026 same bug as
+		// WOLLobbyMenu.cpp's PopulateLobbyPlayerListbox() -- `selections` was
+		// an uninitialized pointer whose own address was passed in, instead
+		// of a real buffer sized to maxSel. See GLM_GET_SELECTION in
+		// GadgetListBox.cpp for the matching handler-side fix.
 		Int maxSel = GadgetListBoxGetMaxSelectedLength(playerListbox);
-		Int *selections;
-		GadgetListBoxGetSelected(playerListbox, (Int *)&selections);
+		std::vector<Int> selectionsBuf(maxSel);
+		GadgetListBoxGetSelected(playerListbox, selectionsBuf.data());
+		Int *selections = selectionsBuf.data();
 
 		if (selections[0] == -1)
 		{	// Public message

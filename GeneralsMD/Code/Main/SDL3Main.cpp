@@ -77,6 +77,7 @@
 #include "Common/Debug.h"
 #include "Common/version.h"  // GeneralsX @bugfix BenderAI 14/02/2026 Version class + TheVersion extern
 #include "SDL3GameEngine.h"
+#include "GeneratedVersion.h"  // GeneralsX @feature Android port 12/07/2026 ANDROID_CI_BUILD_NUMBER
 
 // DXVK WSI
 #define DXVK_WSI_SDL3 1
@@ -706,6 +707,12 @@ int main(int argc, char* argv[])
 	fprintf(stderr, "=================================================\n");
 	fprintf(stderr, " Command & Conquer Generals: Zero Hour (Linux)\n");
 	fprintf(stderr, " SDL3 + DXVK Build\n");
+	// GeneralsX @feature Android port 12/07/2026 Print the CI run number
+	// (matches the "runNNN" in the release APK's filename) so a crash log
+	// or bug report unambiguously proves which build produced it -- we've
+	// already misattributed a tester's log to the wrong build once because
+	// there was no way to tell them apart.
+	fprintf(stderr, " CI build number: %d\n", ANDROID_CI_BUILD_NUMBER);
 	fprintf(stderr, "=================================================\n\n");
 
 	try {

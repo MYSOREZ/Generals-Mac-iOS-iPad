@@ -103,6 +103,17 @@ public class GeneralsZHActivity extends SDLActivity {
             return;
         }
 
+        // GeneralsX @bugfix Android port 12/07/2026 GeneralsOnline session
+        // tokens expire server-side within hours, but native code reads a
+        // static token from the session marker file -- a player who signed in
+        // earlier the same day got "Could not connect to GeneralsOnline (HTTP
+        // response code said error)" (401 on MOTD + WebSocket, confirmed by
+        // device log). Trade the cached refresh_token for a fresh session on
+        // every launch, in the background, before the player can reach the
+        // Online button; on failure the old marker stays (nothing regresses
+        // offline).
+        GeneralsOnlineSession.refreshSessionAsync(this);
+
         // GeneralsX @bugfix Android port 07/07/2026 Apply the fonts/dxvk.conf/
         // DefaultOptions.ini copy-if-missing fix retroactively on every launch,
         // not just when the folder is freshly picked in Setup — an install that

@@ -108,6 +108,20 @@ protected:
 	Bool			m_IsActive;
 	Bool			m_IsTextInputActive;
 	GameWindow*	m_TextInputFocusWindow;
+	// GeneralsX @bugfix Android port 11/07/2026 - Counts down (one tick per
+	// pollSDL3Events() call) after a fresh finger-down/up, so updateTextInputState()
+	// knows the *next* time an entry field is seen focused, it's because of a
+	// deliberate tap (not e.g. a screen's default focus assignment) and it's safe to
+	// (re)open the on-screen keyboard, even if it was dismissed by the OS without the
+	// field losing focus. A short countdown (rather than a same-call one-shot flag) is
+	// needed because touch->focus is not synchronous: the tap is only queued as a
+	// mouse click here, and GameEngine::update() (which runs the window manager and
+	// actually moves focus) executes right after pollSDL3Events() returns, so the
+	// focus change is only visible on a *later* call. Declared unconditionally (only
+	// read/written under SAGE_MOBILE_PLATFORM in the .cpp) because that macro is
+	// defined locally in SDL3GameEngine.cpp *after* this header is included, so it
+	// isn't visible yet while this class body is being parsed.
+	Int				m_PendingTextInputRearmFrames;
 
 	// Event processing
 	void pollSDL3Events(void);

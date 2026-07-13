@@ -1,0 +1,11 @@
+{
+	"title"											: "GeneralsOnline",
+	"executable"									: "GeneralsOnlineZH_60.exe",
+	"productid"										: "fc1cc0d936424212b645105f084d08b0",
+	"sandboxid"										: "c680c166cbb64825993c69b751a5a0b1",
+	"deploymentid"									: "e6537d78e8e74577b5c009cf86da3de1",
+	"requested_splash"								: "EasyAntiCheat/SplashScreen.png",
+	"wait_for_game_process_exit"					: "false",
+	"hide_bootstrapper"								: "false",
+	"hide_gui"										: "false"
+}

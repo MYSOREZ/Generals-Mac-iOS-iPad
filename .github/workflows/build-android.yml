@@ -273,6 +273,7 @@ jobs:
           cmake --preset ${{ env.PRESET }} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DANDROID_CI_BUILD_NUMBER=${{ github.run_number }} \
             2>&1 | tee logs/configure_android.log
 
       - name: Build z_generals (libmain.so) + DXVK d3d8/d3d9
@@ -295,8 +296,20 @@ jobs:
         run: |
           set -euo pipefail
           READELF="$(ls "${ANDROID_NDK_HOME}"/toolchains/llvm/prebuilt/*/bin/llvm-readelf | head -1)"
-          GAME_LIB="$(find build/${{ env.PRESET }} -name libmain.so -not -path '*/_deps/*' | head -1)"
-          if [ -z "$GAME_LIB" ]; then echo "::error::libmain.so not found"; exit 1; fi
+          # GeneralsX @bugfix Android port 13/07/2026 - this step has
+          # intermittently failed "libmain.so is not AArch64" (builds #118,
+          # #127, #129) within milliseconds of ninja's own "Linking ...
+          # libmain.so" line, always on an otherwise-clean build (re-running
+          # the identical commit always passes). The broad `find ... -name
+          # libmain.so | head -1` this used to run has no ordering guarantee
+          # when the build dir accumulates more than one match across cached/
+          # incremental runs (ccache + vcpkg + DXVK build caches are all
+          # restored between runs) -- `head -1` can silently grab a stale or
+          # wrong-arch copy instead of the one ninja just linked. The target's
+          # own OUTPUT_NAME (GeneralsMD/Code/Main/CMakeLists.txt) makes the
+          # real path deterministic, so use it directly instead of searching.
+          GAME_LIB="build/${{ env.PRESET }}/GeneralsMD/Code/Main/libmain.so"
+          if [ ! -f "$GAME_LIB" ]; then echo "::error::libmain.so not found at $GAME_LIB"; exit 1; fi
           "$READELF" -h "$GAME_LIB" | grep -q AArch64 || { echo "::error::libmain.so is not AArch64"; exit 1; }
           for lib in libdxvk_d3d8.so libdxvk_d3d9.so; do
             [ -f "build/${{ env.PRESET }}/$lib" ] || { echo "::error::$lib missing"; exit 1; }

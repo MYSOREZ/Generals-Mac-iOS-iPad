@@ -25,6 +25,23 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
+    <!-- GeneralsX @feature Android port 10/07/2026 GeneralsOnline account
+         login (GeneralsOnlineActivity) and, eventually, the native
+         multiplayer client both need plain outbound HTTPS/WebSocket. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- GeneralsX @bugfix Android port 10/07/2026 the sign-in flow backgrounds
+         this app for the whole browser round-trip (open playgenerals.online,
+         pick Steam/Discord/GameReplays, come back) — on some OEM battery
+         managers the poll timer got throttled hard enough that CheckLogin
+         never got a chance to run, so a login that visibly succeeded on the
+         website never actually completed in the app. Requesting exemption
+         from battery optimization (GeneralsOnlineActivity.onSignIn) fixes
+         that; this is the normal (non-dangerous) permission needed to even
+         show that system prompt. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -90,5 +107,31 @@
             android:exported="false"
             android:theme="@style/Theme.GeneralsZHSettings"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <activity
+            android:name=".GeneralsOnlineActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GeneralsZHSettings"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <!-- GeneralsX @bugfix Android port 11/07/2026 LogViewerActivity's
+             Share button used to hand the log over as raw Intent.EXTRA_TEXT,
+             which (a) only works with the handful of apps that accept plain
+             text (no "Save to Files/Downloads/Drive" target ever showed up),
+             and (b) risks TransactionTooLargeException for a big log,
+             silently failing to launch anything. Sharing an actual file via
+             FileProvider fixes both: any app that handles files (including
+             "Save to...") becomes a valid target, and only a small content://
+             Uri crosses the Binder, not the log text itself. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

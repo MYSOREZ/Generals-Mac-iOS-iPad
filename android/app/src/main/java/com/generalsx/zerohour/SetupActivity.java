@@ -98,6 +98,7 @@ public class SetupActivity extends Activity {
         int pad = dp(20);
         root.setPadding(pad, pad, pad, pad);
         setContentView(root);
+        InsetUtil.applySafeInsets(root);
 
         TextView warning = new TextView(this);
         warning.setText("The normal Settings UI failed to load (" + failure + "). "
@@ -120,6 +121,7 @@ public class SetupActivity extends Activity {
     protected void onResume() {
         super.onResume();
         refreshStatus();
+        refreshGeneralsOnlineStatus();
     }
 
     // GeneralsX @feature Android port 08/07/2026 Material redesign: each
@@ -133,6 +135,7 @@ public class SetupActivity extends Activity {
         root.setPadding(pad, pad, pad, pad);
         scroll.addView(root);
         setContentView(scroll);
+        InsetUtil.applySafeInsets(scroll);
 
         TextView title = new TextView(this);
         title.setText("Command & Conquer Generals: Zero Hour");
@@ -161,6 +164,7 @@ public class SetupActivity extends Activity {
 
         buildUiScaleSection(root);
         buildCustomDriverSection(root);
+        buildGeneralsOnlineSection(root);
 
         LinearLayout helpCard = startCard(root, "How this works");
         TextView help = new TextView(this);
@@ -495,6 +499,31 @@ public class SetupActivity extends Activity {
         }
     }
 
+    // GeneralsX @feature Android port 10/07/2026 GeneralsOnline (playgenerals.online)
+    // account status -- the actual sign-in flow lives in GeneralsOnlineActivity,
+    // this is just a status line + entry point.
+    private TextView onlineStatusView;
+
+    private void buildGeneralsOnlineSection(LinearLayout root) {
+        LinearLayout content = startCard(root, "Online Multiplayer");
+
+        onlineStatusView = new TextView(this);
+        content.addView(onlineStatusView);
+
+        addButton(content, "GeneralsOnline Account", () ->
+            startActivity(new Intent(this, GeneralsOnlineActivity.class)));
+    }
+
+    private void refreshGeneralsOnlineStatus() {
+        if (onlineStatusView == null) {
+            return;
+        }
+        String displayName = GeneralsOnlineActivity.getSignedInDisplayName(this);
+        onlineStatusView.setText(displayName != null
+            ? "Signed in as " + displayName + "."
+            : "Not signed in -- required for online matches.");
+    }
+
     private File optionsIniFile() {
         return new File(getFilesDir(), ".local/share/GeneralsX/GeneralsZH/Options.ini");
     }
@@ -756,6 +785,10 @@ public class SetupActivity extends Activity {
         copyFileIfMissing(new File(bundledRoot, "dxvk.conf"), new File(gameFolderPath, "dxvk.conf"));
         copyFileIfMissing(new File(bundledRoot, "DefaultOptions.ini"), new File(gameFolderPath, "DefaultOptions.ini"));
         copyDirIfMissing(new File(bundledRoot, "fonts"), new File(gameFolderPath, "fonts"));
+        // GeneralsX @note Android port 11/07/2026 no GeneralsOnline lobby
+        // .wnd screens are staged here anymore -- the real client reuses the
+        // original, unmodified Zero Hour .wnd files already inside the
+        // user's own copied game .big archives, so there is nothing to copy.
     }
 
     private static void copyFileIfMissing(File bundled, File dest) {

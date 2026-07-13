@@ -45,6 +45,9 @@
 #include "PreRTS.h"	// This must go first in EVERY cpp file in the GameEngine
 
 // SYSTEM INCLUDES
+// GeneralsX @bugfix Android port 11/07/2026 needed earlier in this file now
+// (freeBytes() calls ::free() for foreign pointers -- see m_ownershipCookie).
+#include <cstdlib>
 
 // USER INCLUDES
 #include "Common/GameMemory.h"
@@ -102,6 +105,10 @@ DECLARE_PERF_TIMER(MemoryPoolInitFilling)
 	static const char* FREE_SINGLEBLOCK_TAG_STRING			= "FREE_SINGLEBLOCK_TAG_STRING";
 	const Short SINGLEBLOCK_MAGIC_COOKIE								= 12345;
 	const Int GARBAGE_FILL_VALUE												= 0xdeadbeef;
+
+	// GeneralsX @bugfix Android port 11/07/2026 always-present (not gated by
+	// MEMORYPOOL_DEBUG) ownership marker -- see m_ownershipCookie below.
+	static const UnsignedInt OWNERSHIP_COOKIE = 0x47454e58; // 'GENX'
 
 	// flags for m_debugFlags
 	enum
@@ -402,6 +409,21 @@ private:
 #ifdef MPSB_DLINK
 	MemoryPoolSingleBlock	*m_prevBlock;				///< if m_owningBlob is nonnull, this points to prev free (unallocated) block in the blob; if m_owningBlob is null, this points to the prev used (allocated) raw block in the pool.
 #endif
+	// GeneralsX @bugfix Android port 11/07/2026 unlike m_magicCookie below
+	// (which only exists in MEMORYPOOL_DEBUG builds), this field is always
+	// present so freeBytes() can tell our blocks apart from foreign pointers
+	// in release builds too. Several of our third-party dependencies
+	// (OpenAL-soft, DXVK) build as separate .so's without hidden C++ runtime
+	// visibility; on Android's dynamic linker their `new`/`delete` calls can
+	// resolve to OUR exported global operator new/delete instead of their
+	// own copy, and if that happens asymmetrically (allocated one way, freed
+	// through ours), freeBytes() would misinterpret the bytes preceding a
+	// foreign pointer as pool block metadata and corrupt the real heap --
+	// exactly the "random operator delete[] crash" bug documented by a
+	// parallel Android port of this same engine (tarek369/GeneralsZH-Android,
+	// android.md section on "Global Allocator/Deallocator Heap Corruption").
+	// See freeBytes() for the validation that uses this.
+	UnsignedInt						m_ownershipCookie;
 #ifdef MEMORYPOOL_CHECKPOINTING
 	BlockCheckpointInfo		*m_checkpointInfo;	///< ptr to the checkpointinfo for this block
 #endif
@@ -435,6 +457,11 @@ public:
 	void initBlock(Int logicalSize, MemoryPoolBlob *owningBlob, MemoryPoolFactory *owningFactory DECLARE_LITERALSTRING_ARG2);
 	void* getUserData();
 	static MemoryPoolSingleBlock *recoverBlockFromUserData(void* pUserData);
+	// GeneralsX @bugfix Android port 11/07/2026 see m_ownershipCookie comment.
+	// Reads the header without any of recoverBlockFromUserData's debug-mode
+	// verification (which assumes the pointer is already known-valid) --
+	// safe to call on a pointer of unknown origin.
+	static Bool isOurBlock(void* pUserData);
 	MemoryPoolBlob *getOwningBlob();
 
 	MemoryPoolSingleBlock *getNextFreeBlock();
@@ -892,6 +919,9 @@ void MemoryPoolSingleBlock::initBlock(Int logicalSize, MemoryPoolBlob *owningBlo
 }
 #endif // MEMORYPOOL_DEBUG
 
+	// GeneralsX @bugfix Android port 11/07/2026 always set, see field comment.
+	m_ownershipCookie = OWNERSHIP_COOKIE;
+
 #ifdef MEMORYPOOL_CHECKPOINTING
 	m_checkpointInfo = nullptr;
 #endif
@@ -929,6 +959,29 @@ void MemoryPoolSingleBlock::initBlock(Int logicalSize, MemoryPoolBlob *owningBlo
 	block->debugVerifyBlock();
 #endif
 	return block;
+}
+
+//-----------------------------------------------------------------------------
+/**
+	GeneralsX @bugfix Android port 11/07/2026 Check whether pUserData looks
+	like a pointer we handed out, by reading the ownership cookie that should
+	sit at the same offset our own allocations always write it to. Foreign
+	pointers (memory a third-party .so allocated through its own copy of
+	operator new before Android's dynamic linker resolved its operator delete
+	calls to ours -- see m_ownershipCookie comment) will essentially never
+	happen to have this exact 32-bit value sitting there by coincidence.
+*/
+/* static */ Bool MemoryPoolSingleBlock::isOurBlock(void* pUserData)
+{
+	if (!pUserData)
+		return false;
+	static constexpr size_t kHeaderSize = (sizeof(MemoryPoolSingleBlock) + 15) & ~size_t(15);
+	char* p = ((char*)pUserData) - kHeaderSize;
+	#ifdef MEMORYPOOL_BOUNDINGWALL
+	p -= WALLSIZE;
+	#endif
+	MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)p;
+	return block->m_ownershipCookie == OWNERSHIP_COOKIE;
 }
 
 //-----------------------------------------------------------------------------
@@ -2294,6 +2347,21 @@ void DynamicMemoryAllocator::freeBytes(void* pBlockPtr)
 		return;
 
 	ScopedCriticalSection scopedCriticalSection(TheDmaCriticalSection);
+
+	// GeneralsX @bugfix Android port 11/07/2026 this is the single choke
+	// point every global operator delete/delete[] override routes through
+	// (see the operator delete overloads below). A pointer reaching here
+	// isn't guaranteed to be one WE allocated -- see m_ownershipCookie's
+	// comment for why a separately-linked .so's own allocations can end up
+	// here. Blindly treating foreign memory as one of our pool blocks would
+	// misread the preceding bytes as block metadata and corrupt the real
+	// heap, causing crashes far away from the actual mistake. Hand anything
+	// we don't recognize to the real system free() instead.
+	if (!MemoryPoolSingleBlock::isOurBlock(pBlockPtr))
+	{
+		::free(pBlockPtr);
+		return;
+	}
 
 #ifdef MEMORYPOOL_CHECK_BLOCK_OWNERSHIP
 	DEBUG_ASSERTCRASH(debugIsBlockInDma(pBlockPtr), ("block is not in this dma"));

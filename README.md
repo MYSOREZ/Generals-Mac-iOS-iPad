@@ -1,63 +1,147 @@
-# Command & Conquer Generals: Zero Hour — macOS, iOS & iPadOS
+# Command & Conquer Generals: Zero Hour — Android (+ macOS, iOS & iPadOS)
 
 <img width="500" height="281" alt="IMG_3457_500" src="https://github.com/user-attachments/assets/aeaf6692-36e6-40c8-b9f8-8066d014ec4b" />
 
-**Zero Hour running natively on Apple Silicon Macs, iPhone, and iPad** — campaign,
-skirmish, and Generals Challenge, with touch controls built for RTS (tap-select,
-drag-box, long-press deselect, two-finger scroll, pinch zoom). No emulation: this
-is the real 2003 engine compiled for ARM64, rendering DirectX 8 →
-[DXVK](https://github.com/doitsujin/dxvk) → Vulkan →
-[MoltenVK](https://github.com/KhronosGroup/MoltenVK) → Metal.
+**Zero Hour running natively on Android** — campaign, skirmish, Generals Challenge,
+and full online multiplayer (GeneralsOnline: lobby, custom match, quickmatch,
+persona/stats, friends & social), with touch controls built for RTS (tap-select,
+drag-box, long-press deselect, two-finger pan, pinch/anchor zoom). No emulation:
+this is the real 2003 engine compiled for ARM64, rendering DirectX 8 →
+[DXVK](https://github.com/doitsujin/dxvk) → **Vulkan native** — no translation
+layer beyond DXVK itself, since Android speaks Vulkan directly.
+
+The same codebase also runs on Apple Silicon Macs, iPhone, and iPad (DirectX 8 →
+DXVK → [MoltenVK](https://github.com/KhronosGroup/MoltenVK) → Metal) — that's
+where this port started, and it's still maintained, but active development has
+shifted to Android, which is now the most complete and most heavily
+real-device-tested target.
 
 Built on EA's GPL v3 source release, standing on a chain of community work —
 [TheSuperHackers](https://github.com/TheSuperHackers/GeneralsGameCode),
 [Fighter19's original Unix port](https://github.com/Fighter19/CnC_Generals_Zero_Hour), and
-[fbraz3/GeneralsX](https://github.com/fbraz3/GeneralsX) — this fork adds the iOS/iPadOS
-port and a set of engine fixes. See [Lineage & credits](#lineage--credits) for who built
-what. The original GeneralsX README lives on the `upstream-main` branch.
+[fbraz3/GeneralsX](https://github.com/fbraz3/GeneralsX) — this fork adds the
+Android and iOS/iPadOS ports, GeneralsOnline multiplayer, and a set of engine
+fixes. See [Lineage & credits](#lineage--credits) for who built what. The
+original GeneralsX README lives on the `upstream-main` branch.
 
 **No game assets are included or distributed.** You need your own copy
 ([Steam](https://store.steampowered.com/app/2732960/), ~$5 on sale).
+
+## Status
+
+- **Android**: primary target. CI builds a signed, installable APK on every
+  push. Campaign, skirmish, and Generals Challenge run natively. **Online
+  multiplayer works, including actual matches**: GeneralsOnline (a from-scratch
+  NGMP-based backend, not the long-dead GameSpy servers) drives account login,
+  the multiplayer lobby, Custom Match (create/browse/join, live room + player
+  lists, chat), Quickmatch, My Persona (stats/rank), and Communicator
+  (friends/social) — and matches now actually start and play: a P2P transport
+  (Valve's [GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets),
+  built from source for Android with native ICE/STUN/TURN, no external WebRTC
+  dependency) replaces the legacy transport that internet games never had a
+  real implementation for. This has been shaken out against real players and
+  real devices, including bug reports from outside testers via this repo's
+  [issue tracker](../../issues) — see
+  [`docs/port/ANDROID_PORT.md`](docs/port/ANDROID_PORT.md) for the device/driver
+  matrix and the full bring-up log.
+- **macOS / iOS / iPadOS**: fully working (campaign, skirmish, Generals
+  Challenge), maintained, not currently receiving the same volume of new work.
+  GeneralsOnline multiplayer has not been ported to these platforms yet — the
+  Android build is where that backend was built.
 
 ## What this port actually involved
 
 "Porting" undersells how weird this journey was, so here's the honest shape of it.
 The lineage below built the foundation: EA's source release, the community's
 modernization, Fighter19's original Unix port, GeneralsX's macOS/Linux work.
-What did *not* exist was any of this on iOS — and iOS is a hostile place for a
-2003 Windows RTS:
+None of that included a mobile online-multiplayer backend, or Android at all —
+and both are hostile territory for a 2003 Windows RTS:
 
-- **The engine assumes a writable filesystem wherever it lives.** iOS apps live in a
-  read-only, code-signed bundle. Every config write, cache, and save path had to be
-  rerouted — and the working directory bootstrapped from the bundle itself.
-- **The renderer speaks DirectX 8. The iPad speaks Metal.** In between: DXVK
-  translating D3D8→Vulkan, MoltenVK translating Vulkan→Metal — and DXVK had never
-  been built for iPhoneOS. That took a Meson cross-build and a patch to its Vulkan
-  loader, because iOS confines `dlopen` to the app bundle ([`Patches/dxvk-ios.patch`](Patches/dxvk-ios.patch)).
-- **iOS owns your process.** Open the app switcher and the OS seizes the Metal
-  drawable *without backgrounding you* — draw one more frame and you're dead on
-  resume. The whole render/sim loop learned to hold its breath.
-- **An RTS needs a mouse.** SDL3 (from the lineage below) delivers raw touch events;
-  the RTS semantics on top are new. Taps defer until the 2003 GUI has processed
-  hover (or menu buttons never highlight), a drag has to decide "selection box or
-  camera pan," long-press became right-click, and a cancelled touch must never
-  ghost-click a rally point.
-- **And then the bug hunts** — the best part. The minimap that rendered black
-  because a 2003 texture-format fallback silently dropped the alpha channel. The
-  EVA voice that went randomly mute because one zombie audio stream held a global
-  "don't talk over speech" flag while chirping forever. Every one chased to root
-  cause on a real device, fixed, and offered upstream.
+- **GameSpy is dead. The retail multiplayer stack assumes it isn't.** Zero
+  Hour's entire online layer — matchmaking, lobbies, buddy lists, stats — was
+  built on GameSpy SDK calls to servers EA shut down over a decade ago. Getting
+  multiplayer working again meant building a real backend (GeneralsOnline,
+  NGMP-based: REST + WebSocket, its own auth/session/lobby/stats/social
+  services) and re-wiring the original `.wnd` UI screens and GUI callbacks —
+  largely untouched since 2003 — to talk to it instead, one menu at a time
+  (Welcome screen, Custom Match, Quickmatch, My Persona, Communicator).
+- **Async callbacks + screen teardown is a loaded gun.** Almost every real
+  crash chased down on real devices during multiplayer bring-up turned out to
+  be the same shape: an HTTP or WebSocket completion callback captured a raw
+  pointer (a `GameWindow*`, a roster entry, a listbox) that was still valid
+  when the request was *sent*, but the user had already backed out of the
+  screen — or a second refresh had already torn it down — by the time the
+  response landed. The fix pattern that recurred: capture a stable ID, not a
+  pointer, and re-resolve (or bail) inside the callback.
+- **The engine assumes a writable filesystem wherever it lives, and a mouse.**
+  Android's scoped storage and SDL3's raw touch events needed the same kind of
+  rerouting and gesture-to-mouse translation work the iOS port pioneered — tap
+  defers until the 2003 GUI processes hover, a drag becomes a selection box or
+  a camera pan depending on how it started, one held finger + a second moving
+  vertically is zoom (not classic two-finger pinch, which fought camera pan),
+  and a double-tap now does what a PC double-click always did (select all of
+  one unit type on screen).
+- **Old data, new parser, sharp edges.** Zero Hour's `.ini` data layers on top
+  of base Generals data, and the two games were split into separate build
+  targets at some point in this codebase's history — with a couple of
+  genuinely-still-used tokens (`DamageType=FLESHY_SNIPER`, `KindOf=AIRFIELD`)
+  accidentally compiled out of the Zero Hour build in that split. Both looked
+  like "someone's mod is doing something weird" until traced back to a
+  preprocessor guard on the wrong side of an `#if`.
+- **And a memory-corruption hunt that went all the way to the allocator.**
+  Unresolved-crash-PC segfaults with no clean call stack, days apart, no
+  obvious pattern — eventually traced to the engine's global `operator
+  delete` override having no way to tell "one of ours" from a pointer a
+  separately-linked `.so` (OpenAL, DXVK) allocated through its own copy of
+  `new`. Fixed with an ownership cookie instead of blind trust.
 
-**→ The war stories: [Porting Playbook §8 — the bug archaeology](docs/port/PORTING_PLAYBOOK.md#8-post-ship-bug-hunts-junejuly-2026--the-archaeology-section)**
-**→ The complete engineering log: [docs/port/PORTING_PLAYBOOK.md](docs/port/PORTING_PLAYBOOK.md)**
+**→ The Android engineering log: [docs/port/ANDROID_PORT.md](docs/port/ANDROID_PORT.md)**
+**→ The macOS/iOS war stories: [Porting Playbook §8 — the bug archaeology](docs/port/PORTING_PLAYBOOK.md#8-post-ship-bug-hunts-junejuly-2026--the-archaeology-section)**
+**→ The complete macOS/iOS engineering log: [docs/port/PORTING_PLAYBOOK.md](docs/port/PORTING_PLAYBOOK.md)**
 **→ How to do this to another game: [docs/port/PORTING_PATTERNS.md](docs/port/PORTING_PATTERNS.md)**
 
 Worth saying plainly: this was a **human + AI collaboration**. The engineering —
-the C++, the cross-builds, the device debugging — was done by
-[Claude Code](https://claude.com/claude-code) (Anthropic's Claude, Fable model),
-directed and playtested by a human who described symptoms like *"the minimap is
-black"* and *"I hear chirping"* and owned every decision. Neither half ships this
-alone: one of us can't write C++, and the other can't hear the chirping.
+the C++, the cross-builds, the device debugging, the multiplayer backend — was
+done by [Claude Code](https://claude.com/claude-code) (Anthropic's Claude),
+directed and playtested by a human who described symptoms like *"the lobby
+list is empty"* and *"it crashes right after I press Back"* and owned every
+decision. Neither half ships this alone: one of us can't write C++, and the
+other can't play-test on a real phone.
+
+## Quick start — Android
+
+Same engine, one translation layer fewer than iOS: DirectX 8 → DXVK →
+**Vulkan native** (no MoltenVK). Needs a device whose GPU driver speaks
+**Vulkan 1.3** (Snapdragon with Adreno 7xx/8xx: yes; older Mali like the G76:
+no — the app detects this and shows a clear on-screen message instead of
+silently closing; see the doc for driver-replacement options).
+
+**No local toolchain needed** — push to a `claude/**` branch (or run it
+manually) and GitHub Actions builds the APK: **Actions tab → Build Android →
+Run workflow**. Every CI build is signed with the same committed debug key and
+gets an increasing versionCode, so you can install a newer run **over** an
+older one without uninstalling. (On a fork, enable Actions once: Actions tab →
+"I understand my workflows, go ahead and enable them".) Download the APK
+artifact from the run and install it.
+
+**No adb needed either, for setup or logs**: the APK installs a second icon,
+**"GeneralsZH Setup"**, with an in-app folder picker (point it at wherever
+you copied your own game files — Downloads, an SD card, anywhere) and a log
+viewer with Clear/Share buttons. See [docs/port/ANDROID_PORT.md §4](docs/port/ANDROID_PORT.md#4-game-data-and-first-run--the-in-app-setup-flow-no-adb-no-pc-needed)
+for the full first-run walkthrough.
+
+Building locally instead needs the Android NDK (r26+), vcpkg, meson/ninja:
+
+```sh
+cd GeneralsX
+git submodule update --init references/fbraz3-dxvk
+export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>
+./scripts/build/android/build-android-zh.sh        # game -> libmain.so, DXVK -> .so, verified
+./scripts/build/android/package-android-zh.sh --install
+```
+
+**→ The full guide (device/driver matrix, storage layout, multiplayer
+architecture, bring-up log): [docs/port/ANDROID_PORT.md](docs/port/ANDROID_PORT.md)**
 
 ## Quick start — macOS
 
@@ -108,53 +192,20 @@ Find your team id in Xcode → Settings → Accounts. Assets ship inside the app
 bundle (self-contained install); `--dev` skips the ~2.7 GB copy for fast code
 iteration.
 
-## Quick start — Android (work in progress)
-
-Same engine, one translation layer fewer: DirectX 8 → DXVK → **Vulkan native**
-(no MoltenVK). Needs a device whose GPU driver speaks **Vulkan 1.3**
-(Snapdragon with Adreno 7xx/8xx: yes; older Mali like the G76: no — see the
-doc). Status: implemented end-to-end, first on-device bring-up pending.
-
-**No local toolchain needed** — push to a `claude/**` branch (or run it
-manually) and GitHub Actions builds the APK: **Actions tab → Build Android →
-Run workflow**. Every CI build is signed with the same committed debug key and
-gets an increasing versionCode, so you can install a newer run **over** an
-older one without uninstalling. (On a fork, enable Actions once: Actions tab →
-"I understand my workflows, go ahead and enable them".) Download the APK
-artifact from the run and install it.
-
-**No adb needed either, for setup or logs**: the APK installs a second icon,
-**"GeneralsZH Setup"**, with an in-app folder picker (point it at wherever
-you copied your own game files — Downloads, an SD card, anywhere) and a log
-viewer with a Share button. See [docs/port/ANDROID_PORT.md §4](docs/port/ANDROID_PORT.md#4-game-data-and-first-run--the-in-app-setup-flow-no-adb-no-pc-needed)
-for the full first-run walkthrough.
-
-Building locally instead needs the Android NDK (r26+), vcpkg, meson/ninja:
-
-```sh
-cd GeneralsX
-git submodule update --init references/fbraz3-dxvk
-export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>
-./scripts/build/android/build-android-zh.sh        # game -> libmain.so, DXVK -> .so, verified
-./scripts/build/android/package-android-zh.sh --install
-```
-
-**→ The full guide (device/driver matrix, storage layout, bring-up checklist):
-[docs/port/ANDROID_PORT.md](docs/port/ANDROID_PORT.md)**
-
 ## Where things are
 
 | Path | What it is |
 |---|---|
-| [`docs/port/PORTING_PLAYBOOK.md`](docs/port/PORTING_PLAYBOOK.md) | The complete engineering log of this port: every failure mode, root cause, fix — start with [§8, the bug archaeology](docs/port/PORTING_PLAYBOOK.md#8-post-ship-bug-hunts-junejuly-2026--the-archaeology-section): the black minimap, the silent EVA lines, and the chirp |
-| `docs/port/PORTING_PATTERNS.md` | Generalized methodology for porting classic Windows games to Apple platforms |
+| [`docs/port/ANDROID_PORT.md`](docs/port/ANDROID_PORT.md) | The Android port: architecture, GeneralsOnline multiplayer backend, device/driver matrix, build + bring-up log |
+| [`docs/port/PORTING_PLAYBOOK.md`](docs/port/PORTING_PLAYBOOK.md) | The complete macOS/iOS engineering log: every failure mode, root cause, fix — start with [§8, the bug archaeology](docs/port/PORTING_PLAYBOOK.md#8-post-ship-bug-hunts-junejuly-2026--the-archaeology-section) |
+| `docs/port/PORTING_PATTERNS.md` | Generalized methodology for porting classic Windows games to Apple/mobile platforms |
 | `docs/port/RELEASE_CHECKLIST.md` | Gate for public release |
 | `scripts/get-assets.sh` | Steam asset fetcher (your own copy; app 2732960) |
-| [`docs/port/ANDROID_PORT.md`](docs/port/ANDROID_PORT.md) | The Android port: architecture, device/driver matrix, build + bring-up guide |
-| `scripts/build/macos/`, `scripts/build/ios/`, `scripts/build/android/` | Build, deploy, packaging pipelines |
-| `android/` | Gradle shell app (SDLActivity) that packages `libmain.so` + DXVK into an APK |
+| `scripts/build/android/`, `scripts/build/macos/`, `scripts/build/ios/` | Build, deploy, packaging pipelines |
+| `android/` | Gradle shell app (SDLActivity) that packages `libmain.so` + DXVK into an APK, plus the Setup/FolderPicker/LogViewer/GeneralsOnline-account activities |
 | `ios/` | XcodeGen signing-stub project + `ios/config/` (staged Options.ini, dxvk.conf) |
-| `Patches/dxvk-ios.patch` | DXVK changes the iOS d3d8/d3d9 dylibs are built from (applied via the local-fork build) |
+| `GeneralsMD/Code/GameEngine/Source/GameNetwork/GeneralsOnline/` | The GeneralsOnline multiplayer client: auth, lobby, rooms, stats, matchmaking, social — talks to a REST + WebSocket backend, not GameSpy |
+| `Patches/dxvk-android.patch`, `Patches/dxvk-ios.patch` | DXVK changes the Android/iOS d3d8/d3d9 `.so`/dylib builds are built from |
 
 ## Known issues
 
@@ -163,6 +214,17 @@ export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>
   the Files app under the game's folder. Under investigation.
 - Backgrounding mid-game can occasionally crash on iOS — the lifecycle pause covers
   the common paths; a rare race remains. Save often.
+- Android: GPUs limited to Vulkan 1.1 (e.g. Mali-G76) can't run the DXVK 2.6 path —
+  the app now shows a clear on-screen message instead of closing silently; see
+  [docs/port/ANDROID_PORT.md §2](docs/port/ANDROID_PORT.md#2-the-device--driver-matrix-read-this-before-filing-black-screen-bugs)
+  for driver-replacement options if you want to chase it further.
+- Android multiplayer is under active real-device shakeout — most reported crashes
+  have traced to a handful of recurring bug classes (see the "what this port
+  actually involved" section above) and get fixed fast, but if something's still
+  rough, check or file an issue. Matches now load and play (P2P transport,
+  camera, and the load-screen crash chain all confirmed working solo, real
+  device); cross-device matches against another live player are the next
+  thing being shaken out.
 
 ## What's next: Renegade 👀
 
@@ -202,8 +264,14 @@ work that this repo inherits everywhere:
   this renderer path descends from
 - **[fbraz3/GeneralsX](https://github.com/fbraz3/GeneralsX)** — the macOS/Linux port
   this fork builds on directly, integrating and extending the above
-- **This fork** — the iOS/iPadOS port (arm64-ios cross-build, DXVK-on-iOS, touch
-  controls, app lifecycle, packaging) and engine fixes, offered upstream
+- **[tarek369/GeneralsZH-Android](https://github.com/tarek369/GeneralsZH-Android)** —
+  an independent, parallel Android port of the same lineage; several real bugs in
+  this port (a duplicate-symbol build break, an INI-parsing gap) were cross-checked
+  and traced faster thanks to its published engineering log
+- **This fork** — the Android port (GeneralsOnline multiplayer backend, touch
+  controls, in-app Setup/log-viewer flow, device bring-up) and the iOS/iPadOS
+  port (arm64-ios cross-build, DXVK-on-iOS, touch controls, app lifecycle,
+  packaging), plus engine fixes throughout, offered upstream
 - **DXVK, MoltenVK, SDL, OpenAL Soft, FFmpeg, Liberation Fonts** — the load-bearing walls
 
 Engine code **GPL v3** (EA's source release → the chain above → this fork). Game

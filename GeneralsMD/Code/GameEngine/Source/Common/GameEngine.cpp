@@ -105,9 +105,53 @@
 #include "GameNetwork/WOLBrowser/WebBrowser.h"
 #include "GameNetwork/LANAPI.h"
 #include "GameNetwork/GameSpy/GameResultsThread.h"
+// GeneralsX @feature Android port 10/07/2026 GeneralsOnline's HTTPManager/
+// WebSocket need pumping once a frame, same as TheNetwork below, or nothing
+// they kick off (auth polling, WS connect, HTTP requests) ever progresses.
+#include "GameNetwork/GeneralsOnline/NGMP_interfaces.h"
+// GeneralsX @bugfix Android port 07/11/2026 - needed for GSMessageBoxOk/GameSpyCloseAllOverlays used by TearDownGeneralsOnline below
+#include "GameNetwork/GameSpyOverlay.h"
 
 #include "Common/version.h"
 
+// GeneralsX @bugfix Android port 07/11/2026 - ported from upstream GeneralsOnline: request a delayed teardown of NGMP
+// online services, deferred to the next GameEngine::update() so it doesn't destroy the manager mid-callback.
+static bool g_bTearDownGeneralsOnlineRequested = false;
+void TearDownGeneralsOnline()
+{
+	g_bTearDownGeneralsOnlineRequested = true;
+
+	if (NGMP_OnlineServicesManager::GetInstance() == nullptr)
+		return;
+
+	EGOTearDownReason teardownReason = NGMP_OnlineServicesManager::GetInstance()->GetTeardownReason();
+
+	if (teardownReason != EGOTearDownReason::USER_REQUESTED_SILENT)
+	{
+		UnicodeString title, body;
+
+		if (teardownReason == EGOTearDownReason::USER_LOGOUT)
+		{
+			title = L"Logged Out";
+			body = L"You are now logged out of GeneralsOnline.";
+		}
+		else if (teardownReason == EGOTearDownReason::LOST_CONNECTION)
+		{
+			title = TheGameText->fetch("GUI:GSErrorTitle");
+			body = L"Your connection to the Generals Online servers was lost.";
+		}
+		else
+		{
+			title = TheGameText->fetch("GUI:GSErrorTitle");
+			body = L"An unknown error occurred.";
+		}
+
+		NGMP_OnlineServicesManager::GetInstance()->ResetPendingFullTeardownReason();
+
+		GameSpyCloseAllOverlays();
+		GSMessageBoxOk(title, body);
+	}
+}
 
 //-------------------------------------------------------------------------------------------------
 
@@ -819,7 +863,14 @@ void GameEngine::init()
 			RELEASE_CRASHLOCALIZED("ERROR:D3DFailurePrompt", "ERROR:D3DFailureMessage");
 		}
 	}
-	catch (INIException e)
+	// GeneralsX @bugfix Android port 12/07/2026 - INIException has no
+	// user-defined copy constructor, so catching it BY VALUE shallow-copies
+	// the mFailureMessage pointer; both the local copy and the original
+	// propagating exception object then delete[] the same pointer when
+	// their destructors run, a double-free that corrupts the heap right as
+	// we're reporting an INI parse error. Catch by const reference instead
+	// (only ever read here) so no copy happens at all.
+	catch (const INIException& e)
 	{
 		if (e.mFailureMessage)
 			RELEASE_CRASH((e.mFailureMessage));
@@ -976,6 +1027,19 @@ void GameEngine::update()
 			{
 				TheNetwork->UPDATE();
 			}
+
+			// GeneralsX @bugfix Android port 07/11/2026 - ported from upstream GeneralsOnline: process a deferred TearDownGeneralsOnline() request
+			if (g_bTearDownGeneralsOnlineRequested) // delayed tear down
+			{
+				g_bTearDownGeneralsOnlineRequested = false;
+
+				NGMP_OnlineServicesManager::DestroyInstance();
+			}
+
+			if (NGMP_OnlineServicesManager::GetInstance() != nullptr)
+			{
+				NGMP_OnlineServicesManager::GetInstance()->Tick();
+			}
 		}
 
 		// TheSuperHackers @info Ignores frozen time because the script engine needs updating in the logic update regardless.
@@ -1045,7 +1109,10 @@ void GameEngine::execute()
 					// compute a frame
 					update();
 				}
-				catch (INIException e)
+				// GeneralsX @bugfix Android port 12/07/2026 - Catch by const reference,
+				// see the same fix earlier in this file for why (INIException lacks a
+				// copy constructor, so catching by value double-frees mFailureMessage).
+				catch (const INIException& e)
 				{
 					// Release CRASH doesn't return, so don't worry about executing additional code.
 					if (e.mFailureMessage)

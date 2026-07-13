@@ -1,7 +1,14 @@
 # GeneralsX: Instructions for AI Coding Agents
 
 ## What I Am
-GeneralsX is a cross-platform port of Command & Conquer: Generals Zero Hour for **Linux and macOS**, porting legacy Windows DirectX 8 + Miles Sound code to a modern stack (SDL3 + DXVK + OpenAL + 64-bit). This is a **massive C++ game engine** (~500k LOC) preserving retail gameplay while modernizing the platform layer.
+GeneralsX is a cross-platform port of Command & Conquer: Generals Zero Hour, porting
+legacy Windows DirectX 8 + Miles Sound code to a modern stack (SDL3 + DXVK + OpenAL +
+64-bit). This fork's active focus is **Android** — including GeneralsOnline, a
+from-scratch NGMP-based online multiplayer backend replacing the long-dead GameSpy
+servers (lobby, custom match, quickmatch, persona/stats, social) — with macOS and
+iOS/iPadOS also fully working but not currently receiving the same volume of new
+work. This is a **massive C++ game engine** (~500k LOC) preserving retail gameplay
+while modernizing the platform layer.
 
 ## Must-Load Context
 Before starting work, read:
@@ -9,15 +16,19 @@ Before starting work, read:
 - `.github/instructions/generalsx.instructions.md` – full architecture
 - `.github/instructions/git-commit.instructions.md` – commit standards
 - `.github/instructions/docs.instructions.md` – documentation workflow
+- `docs/port/ANDROID_PORT.md` – Android port + GeneralsOnline multiplayer: architecture, device matrix, bring-up log
 - `docs/DEV_BLOG/YYYY-MM-DIARY.md` – current development notes
 
 ## Key Entry Points
-- `GeneralsMD/Code/Main/WinMain.cpp`
+- `GeneralsMD/Code/Main/SDL3Main.cpp` – Android/Linux/macOS/iOS entry point
 - `Generals/Code/Main/WinMain.cpp`
 - `Core/GameEngineDevice/Source/`
+- `GeneralsMD/Code/GameEngine/Source/GameNetwork/GeneralsOnline/` – multiplayer backend client
+- `android/` – Gradle shell app (SDLActivity), Setup/FolderPicker/LogViewer/GeneralsOnline-account activities
 
 ## Platform Focus
-- **Active**: Linux (`linux64-deploy`), macOS (`macos-vulkan`)
+- **Active**: Android (`android-vulkan`) — primary target, most real-device testing
+- **Also maintained**: macOS (`macos-vulkan`), iOS/iPadOS (`ios-vulkan`), Linux (`linux64-deploy`)
 - **Future/Exploratory**: Windows (MinGW path, issue #29)
 - **Legacy**: VC6 + DirectX 8 + Miles (reference only)
 
@@ -50,6 +61,17 @@ Before starting work, read:
 - **thesuperhackers-main** – Upstream baseline for regression checks
 
 ## Build Commands
+
+### Android (no local toolchain needed)
+Push to a `claude/**` branch or trigger manually: **Actions tab → Build Android →
+Run workflow**. CI builds `libmain.so` + DXVK, packages a signed APK, verifies
+`DT_NEEDED`/ABI. For a local build see `docs/port/ANDROID_PORT.md §3`:
+```bash
+git submodule update --init references/fbraz3-dxvk
+export ANDROID_NDK_HOME=~/Android/Sdk/ndk/<version>
+./scripts/build/android/build-android-zh.sh
+./scripts/build/android/package-android-zh.sh --install
+```
 
 ### Docker (recommended on Linux host)
 ```bash
@@ -198,6 +220,8 @@ printf "%s" "$body" | rg '\\n' && echo "HAS_LITERAL_BACKSLASH_N=YES" || echo "HA
 ```
 
 ## Build Presets Reference
+- **android-vulkan** – NDK arm64-v8a, API 28, Vulkan native, no MoltenVK (PRIMARY TARGET)
+- **ios-vulkan** – iOS ARM64, DXVK → MoltenVK → Metal
 - **linux64-deploy** – GCC/Clang x86_64, Release (PRIMARY LINUX)
 - **linux64-testing** – Debug variant
 - **macos-vulkan** – macOS ARM64, RelWithDebInfo (PRIMARY MACOS)

@@ -1682,80 +1682,94 @@ GameSlot *lSlot = game->getSlot(game->getLocalSlotNum());
 		GadgetStaticTextSetText(m_playerNames[netSlot], name );
 		m_playerNames[netSlot]->winSetEnabledTextColors(houseColor, m_playerNames[netSlot]->winGetEnabledTextBorderColor());
 
-		// Get the stats for the player
-		PSPlayerStats stats = TheGameSpyPSMessageQueue->findPlayerStatsByID(slot->getProfileID());
-		DEBUG_LOG(("LoadScreen - populating info for %ls(%d) - stats returned id %d",
-			slot->getName().str(), slot->getProfileID(), stats.id));
-
-		Bool isPreorder = TheGameSpyInfo->didPlayerPreorder(stats.id);
-		Int rankPoints = CalculateRank(stats);
-		Int favSide = GetFavoriteSide(stats);
-		const Image *preorderImg = TheMappedImageCollection->findImageByName("OfficersClubsmall");
-		if (!isPreorder)
-			preorderImg = nullptr;
-		const Image *rankImg = LookupSmallRankImage(favSide, rankPoints);
-		m_playerOfficerMedal[i]->winSetEnabledImage(0, preorderImg);
-		m_playerRank[i]->winSetEnabledImage(0, rankImg);
-
-		UnicodeString formatString;
-
-		// pop wins and losses
-		Int numLosses = 0;
-		PerGeneralMap::iterator it;
-		for(it = stats.losses.begin(); it != stats.losses.end(); ++it)
+		// GeneralsX @bugfix Android port 13/07/2026 - a real device crash
+		// (fault_addr=0x0 inside this function, right here) traced to
+		// TheGameSpyPSMessageQueue->findPlayerStatsByID(): TheGameSpyPSMessageQueue
+		// is only ever assigned in the legacy GameSpy peer-connect flow
+		// (Core/GameEngine/Source/GameNetwork/GameSpy/PeerDefs.cpp), which this
+		// GeneralsOnline-based fork never runs for an internet match -- it stays
+		// null. This whole block (win/loss record, rank icon, preorder badge,
+		// disconnect count) is legacy-GameSpy player-stats UI with no
+		// GeneralsOnline equivalent wired up here; skip it gracefully instead of
+		// dereferencing a queue that was never going to exist, same as the
+		// legacy code already does a few lines below for slot->isAI().
+		if (TheGameSpyPSMessageQueue != nullptr)
 		{
-			numLosses += it->second;
-		}
-		Int numWins = 0;
-		for(it =stats.wins.begin(); it != stats.wins.end(); ++it)
-		{
-			numWins += it->second;
-		}
-		formatString.format(L"%d/%d", numWins, numLosses);
-		GadgetStaticTextSetText(m_playerWinLosses[netSlot], formatString);
-		m_playerWinLosses[netSlot]->winSetEnabledTextColors(houseColor, m_playerWinLosses[netSlot]->winGetEnabledTextBorderColor());
-		// favoriteFaction
-			Int numGames = 0;
-		Int favorite = 0;
-		for(it =stats.games.begin(); it != stats.games.end(); ++it)
-		{
-			if(it->second >= numGames)
+			// Get the stats for the player
+			PSPlayerStats stats = TheGameSpyPSMessageQueue->findPlayerStatsByID(slot->getProfileID());
+			DEBUG_LOG(("LoadScreen - populating info for %ls(%d) - stats returned id %d",
+				slot->getName().str(), slot->getProfileID(), stats.id));
+
+			Bool isPreorder = TheGameSpyInfo->didPlayerPreorder(stats.id);
+			Int rankPoints = CalculateRank(stats);
+			Int favSide = GetFavoriteSide(stats);
+			const Image *preorderImg = TheMappedImageCollection->findImageByName("OfficersClubsmall");
+			if (!isPreorder)
+				preorderImg = nullptr;
+			const Image *rankImg = LookupSmallRankImage(favSide, rankPoints);
+			m_playerOfficerMedal[i]->winSetEnabledImage(0, preorderImg);
+			m_playerRank[i]->winSetEnabledImage(0, rankImg);
+
+			UnicodeString formatString;
+
+			// pop wins and losses
+			Int numLosses = 0;
+			PerGeneralMap::iterator it;
+			for(it = stats.losses.begin(); it != stats.losses.end(); ++it)
 			{
-				numGames = it->second;
-				favorite = it->first;
+				numLosses += it->second;
 			}
-		}
-//		if(numGames == 0)
-//			GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch("GUI:None"));
-//		else if( stats.gamesAsRandom > numGames )
-//			GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch("GUI:Random"));
-//		else
-//		{
-//			const PlayerTemplate *fac = ThePlayerTemplateStore->getNthPlayerTemplate(favorite);
-//			if (fac)
+			Int numWins = 0;
+			for(it =stats.wins.begin(); it != stats.wins.end(); ++it)
+			{
+				numWins += it->second;
+			}
+			formatString.format(L"%d/%d", numWins, numLosses);
+			GadgetStaticTextSetText(m_playerWinLosses[netSlot], formatString);
+			m_playerWinLosses[netSlot]->winSetEnabledTextColors(houseColor, m_playerWinLosses[netSlot]->winGetEnabledTextBorderColor());
+			// favoriteFaction
+				Int numGames = 0;
+			Int favorite = 0;
+			for(it =stats.games.begin(); it != stats.games.end(); ++it)
+			{
+				if(it->second >= numGames)
+				{
+					numGames = it->second;
+					favorite = it->first;
+				}
+			}
+//			if(numGames == 0)
+//				GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch("GUI:None"));
+//			else if( stats.gamesAsRandom > numGames )
+//				GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch("GUI:Random"));
+//			else
 //			{
-//				AsciiString side;
-//				side.format("SIDE:%s", fac->getSide().str());
+//				const PlayerTemplate *fac = ThePlayerTemplateStore->getNthPlayerTemplate(favorite);
+//				if (fac)
+//				{
+//					AsciiString side;
+//					side.format("SIDE:%s", fac->getSide().str());
 //
-//				GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch(side));
+//					GadgetStaticTextSetText(m_playerFavoriteFactions[netSlot], TheGameText->fetch(side));
+//				}
 //			}
-//		}
-//		m_playerFavoriteFactions[netSlot]->winSetEnabledTextColors(houseColor, m_playerFavoriteFactions[netSlot]->winGetEnabledTextBorderColor());
-		// disconnects
-		numGames = 0;
-		for(it =stats.discons.begin(); it != stats.discons.end(); ++it)
-		{
-			numGames += it->second;
-		}
-		for(it =stats.desyncs.begin(); it != stats.desyncs.end(); ++it)
-		{
-			numGames += it->second;
-		}
-		numGames += GetAdditionalDisconnectsFromUserFile(stats.id);
+//			m_playerFavoriteFactions[netSlot]->winSetEnabledTextColors(houseColor, m_playerFavoriteFactions[netSlot]->winGetEnabledTextBorderColor());
+			// disconnects
+			numGames = 0;
+			for(it =stats.discons.begin(); it != stats.discons.end(); ++it)
+			{
+				numGames += it->second;
+			}
+			for(it =stats.desyncs.begin(); it != stats.desyncs.end(); ++it)
+			{
+				numGames += it->second;
+			}
+			numGames += GetAdditionalDisconnectsFromUserFile(stats.id);
 
-		formatString.format(L"%d", numGames);
-		GadgetStaticTextSetText(m_playerTotalDisconnects[netSlot], formatString);
-		m_playerTotalDisconnects[netSlot]->winSetEnabledTextColors(houseColor, m_playerTotalDisconnects[netSlot]->winGetEnabledTextBorderColor());
+			formatString.format(L"%d", numGames);
+			GadgetStaticTextSetText(m_playerTotalDisconnects[netSlot], formatString);
+			m_playerTotalDisconnects[netSlot]->winSetEnabledTextColors(houseColor, m_playerTotalDisconnects[netSlot]->winGetEnabledTextBorderColor());
+		}
 		GadgetStaticTextSetText(m_playerSide[netSlot], slot->getApparentPlayerTemplateDisplayName() );
 		m_playerSide[netSlot]->winSetEnabledTextColors(houseColor, m_playerSide[netSlot]->winGetEnabledTextBorderColor());
 
