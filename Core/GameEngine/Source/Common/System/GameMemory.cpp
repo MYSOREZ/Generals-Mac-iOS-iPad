@@ -48,6 +48,12 @@
 // GeneralsX @bugfix Android port 11/07/2026 needed earlier in this file now
 // (freeBytes() calls ::free() for foreign pointers -- see m_ownershipCookie).
 #include <cstdlib>
+#if defined(__ANDROID__)
+// GeneralsX @bugfix Android port 14/07/2026 mincore() for isOurBlock()'s
+// page-mapped check -- see the comment on isOurBlock() itself.
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
 
 // USER INCLUDES
 #include "Common/GameMemory.h"
@@ -980,6 +986,28 @@ void MemoryPoolSingleBlock::initBlock(Int logicalSize, MemoryPoolBlob *owningBlo
 	#ifdef MEMORYPOOL_BOUNDINGWALL
 	p -= WALLSIZE;
 	#endif
+
+#if defined(__ANDROID__)
+	// GeneralsX @bugfix Android port 14/07/2026 On Scudo (Android's default
+	// hardened heap allocator since Android 11, not just Samsung/Exynos --
+	// confirmed independently by another GeneralsX Android fork's own device
+	// testing, tarek369/GeneralsZH-Android commit ba61ec6), reading
+	// m_ownershipCookie at this negative offset for a pointer Scudo itself
+	// allocated (SDL3, FreeType, DXVK, libc++...) lands inside Scudo's chunk
+	// header/guard region instead of ordinary heap bytes. Scudo notices the
+	// out-of-bounds/unexpected read pattern and raises SIGABRT ("invalid
+	// chunk state") from inside its own allocator internals -- no C++
+	// exception, and it can happen before our crash handler gets a clean
+	// shot at logging it. Verify the page is actually mapped and readable
+	// (mincore()) before ever dereferencing p; an unmapped page can't be one
+	// of our headers, so treat it as foreign immediately.
+	const long pageSize = sysconf(_SC_PAGESIZE);
+	char* page = (char*)((uintptr_t)p & ~(uintptr_t)(pageSize - 1));
+	unsigned char vec = 0;
+	if (mincore(page, (size_t)pageSize, &vec) != 0)
+		return false;
+#endif
+
 	MemoryPoolSingleBlock *block = (MemoryPoolSingleBlock *)p;
 	return block->m_ownershipCookie == OWNERSHIP_COOKIE;
 }

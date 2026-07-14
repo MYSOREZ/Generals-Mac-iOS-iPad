@@ -607,6 +607,23 @@ static bool s_filteredDirty = true;
 static void buildFilteredResolutions()
 {
 	s_filteredResolutions.clear();
+#if defined(__ANDROID__)
+	// GeneralsX @bugfix Android port 14/07/2026 there are no desktop display
+	// modes to enumerate on a fixed-resolution mobile screen, and
+	// Enumerate_Resolutions() returns garbage/null here on Android -- the
+	// Settings menu then null-derefs walking it (confirmed independently by
+	// another GeneralsX Android fork's real device testing,
+	// tarek369/GeneralsZH-Android commit ba61ec6). The Settings menu just
+	// needs at least one entry; report the actual native resolution as the
+	// only available mode instead of enumerating.
+	int nativeW = 0, nativeH = 0;
+	float density = 1.0f;
+	DX8Wrapper::GetNativeDisplaySize(nativeW, nativeH, density);
+	if (nativeW <= 0 || nativeH <= 0) { nativeW = 1024; nativeH = 768; }
+	s_filteredResolutions.push_back({ nativeW, nativeH, 32 });
+	s_filteredDirty = false;
+	return;
+#else
 	const RenderDeviceDescClass &devDesc = WW3D::Get_Render_Device_Desc(0);
 	const DynamicVectorClass<ResolutionDescClass> &resolutions = devDesc.Enumerate_Resolutions();
 
@@ -640,6 +657,7 @@ static void buildFilteredResolutions()
 	}
 
 	s_filteredDirty = false;
+#endif
 }
 
 Int W3DDisplay::getDisplayModeCount()
