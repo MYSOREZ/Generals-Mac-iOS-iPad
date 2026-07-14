@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- GeneralsX @feature Android port 08/07/2026 Material theme for the
-         Settings/Log-Viewer/Folder-Picker screens, applied per-Activity in
-         AndroidManifest.xml. The application-level Theme.NoTitleBar.Fullscreen
-         stays the default for GeneralsZHActivity (the game surface). -->
-    <style name="Theme.GeneralsZHSettings" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/gzh_primary</item>
-        <item name="colorPrimaryDark">@color/gzh_primary_dark</item>
-        <item name="colorAccent">@color/gzh_accent</item>
-        <item name="android:windowBackground">@color/gzh_background</item>
-        <item name="android:textColorPrimary">@color/gzh_on_surface</item>
-        <item name="android:textColorSecondary">@color/gzh_on_surface</item>
-    </style>
+
+<style name="Theme.GeneralsZHSettings"
+    parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+    <item name="colorPrimary">@color/gzh_primary</item>
+
+    <item name="colorPrimaryDark">@color/gzh_primary_dark</item>
+
+    <item name="colorSecondary">@color/gzh_accent</item>
+
+    <item name="colorAccent">@color/gzh_accent</item>
+
+    <item name="android:windowBackground">@color/gzh_background</item>
+
+    <item name="android:textColorPrimary">@color/gzh_on_surface</item>
+
+    <item name="android:textColorSecondary">@color/gzh_on_surface</item>
+
+</style>
+
 </resources>
