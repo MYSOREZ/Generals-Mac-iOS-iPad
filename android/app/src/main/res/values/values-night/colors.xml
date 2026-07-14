@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="gzh_primary">#4CAF50</color>
+    <color name="gzh_primary_dark">#2E7D32</color>
+    <color name="gzh_on_primary">#FFFFFF</color>
+
+    <color name="gzh_accent">#FFD54F</color>
+
+    <color name="gzh_background">#121212</color>
+
+    <color name="gzh_surface">#1E1E1E</color>
+
+    <color name="gzh_on_surface">#F5F5F5</color>
+
+</resources>
