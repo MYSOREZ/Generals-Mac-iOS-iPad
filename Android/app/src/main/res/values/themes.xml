@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.GeneralsZH" parent="Theme.Material3.DynamicColorsDark">
+        <!-- Primary Brand Colors -->
+        <item name="colorPrimary">@color/md_theme_dark_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_dark_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_dark_on_primary_container</item>
+
+        <!-- Secondary Colors -->
+        <item name="colorSecondary">@color/md_theme_dark_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_dark_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_dark_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_dark_on_secondary_container</item>
+
+        <!-- Tertiary Colors -->
+        <item name="colorTertiary">@color/md_theme_dark_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_dark_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_dark_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_dark_on_tertiary_container</item>
+
+        <!-- Surface Colors -->
+        <item name="colorSurface">@color/md_theme_dark_surface</item>
+        <item name="colorOnSurface">@color/md_theme_dark_on_surface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_dark_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_dark_on_surface_variant</item>
+
+        <!-- Error Colors -->
+        <item name="colorError">@color/md_theme_dark_error</item>
+        <item name="colorOnError">@color/md_theme_dark_on_error</item>
+
+        <!-- Background -->
+        <item name="android:colorBackground">@color/md_theme_dark_background</item>
+        <item name="colorOnBackground">@color/md_theme_dark_on_background</item>
+
+        <!-- Text Appearance -->
+        <item name="android:textViewStyle">@style/Widget.MaterialComponents.TextView</item>
+        <item name="android:buttonStyle">@style/Widget.Material3.Button</item>
+
+        <!-- Window -->
+        <item name="android:windowBackground">@drawable/window_background</item>
+        <item name="android:statusBarColor">@color/md_theme_dark_surface</item>
+        <item name="android:navigationBarColor">@color/md_theme_dark_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Material 3 Button Styles -->
+    <style name="Widget.GeneralsZH.Button.Filled" parent="Widget.Material3.Button">
+        <item name="android:textColor">@color/md_theme_dark_on_primary</item>
+        <item name="backgroundTint">@color/md_theme_dark_primary</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:paddingVertical">12dp</item>
+    </style>
+
+    <style name="Widget.GeneralsZH.Button.Outlined" parent="Widget.Material3.OutlinedButton">
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="strokeColor">@color/md_theme_dark_primary</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.GeneralsZH.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">@color/md_theme_dark_primary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- Text Styles -->
+    <style name="TextAppearance.GeneralsZH.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="android:textColor">@color/md_theme_dark_on_background</item>
+    </style>
+
+    <style name="TextAppearance.GeneralsZH.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textColor">@color/md_theme_dark_on_surface</item>
+    </style>
+
+    <style name="TextAppearance.GeneralsZH.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">@color/md_theme_dark_on_surface</item>
+    </style>
+</resources>
