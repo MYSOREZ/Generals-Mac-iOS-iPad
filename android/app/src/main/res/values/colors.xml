@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- GeneralsX @feature Android port 08/07/2026 Palette for the Settings /
-         Log Viewer / Folder Picker screens (Material redesign). Loosely nods
-         at the game's own eagle-emblem colors (see mipmap-xxxhdpi/
-         ic_launcher_foreground.png) without trying to reskin the whole OS
-         theme. GeneralsZHActivity (the game surface itself) never references
-         these — it stays on its own plain fullscreen theme. -->
-    <color name="gzh_primary">#1F6B6B</color>
-    <color name="gzh_primary_dark">#123B3B</color>
+
+    <!-- Primary -->
+    <color name="gzh_primary">#2E7D32</color>
+    <color name="gzh_primary_dark">#1B5E20</color>
     <color name="gzh_on_primary">#FFFFFF</color>
-    <color name="gzh_accent">#E8C547</color>
-    <color name="gzh_background">#0F2530</color>
-    <color name="gzh_surface">#16323F</color>
-    <color name="gzh_on_surface">#EAF2F2</color>
+
+    <!-- Secondary -->
+    <color name="gzh_accent">#FFC107</color>
+
+    <!-- Light Theme -->
+    <color name="gzh_background">#F5F7FA</color>
+    <color name="gzh_surface">#FFFFFF</color>
+
+    <color name="gzh_on_surface">#202124</color>
+
 </resources>
