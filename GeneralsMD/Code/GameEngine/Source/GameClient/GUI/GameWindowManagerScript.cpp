@@ -2136,7 +2136,11 @@ static GameWindow *createWindow( char *type,
 	{
 
 		// set any text read from the textLabel
+		fprintf(stderr, "[GX-TRACE] createWindow: about to setWindowText window=%p label='%s'\n", (void*)window, instData->m_textLabelString.str());
+		fflush(stderr);
 		setWindowText( window, instData->m_textLabelString );
+		fprintf(stderr, "[GX-TRACE] createWindow: setWindowText returned window=%p\n", (void*)window);
+		fflush(stderr);
 
 	}
 

@@ -1903,10 +1903,15 @@ FontCharsClass::Create_Freetype_Font (const char *font_name)
 const FontCharsClassCharDataStruct *
 FontCharsClass::Store_Freetype_Char (WCHAR ch)
 {
+	fprintf(stderr, "[GX-TRACE] Store_Freetype_Char: enter ch=U+%04X font=%s FTFace=%p\n", (unsigned int)ch, GDIFontName.str(), (void*)FTFace);
+	fflush(stderr);
+
 	//
 	//	Get the glyph index for the character
 	//
 	FT_UInt glyph_index = FT_Get_Char_Index( FTFace, ch );
+	fprintf(stderr, "[GX-TRACE] Store_Freetype_Char: FT_Get_Char_Index returned glyph_index=%u\n", (unsigned int)glyph_index);
+	fflush(stderr);
 
 	// GeneralsX @bugfix fbraz 03/06/2026 Log ALL Cyrillic character rendering attempts
 	if (ch >= 0x0400 && ch <= 0x04FF) {
@@ -1923,6 +1928,8 @@ FontCharsClass::Store_Freetype_Char (WCHAR ch)
 	//	Load the glyph (without rendering yet)
 	//
 	FT_Error error = FT_Load_Glyph( FTFace, glyph_index, FT_LOAD_DEFAULT );
+	fprintf(stderr, "[GX-TRACE] Store_Freetype_Char: FT_Load_Glyph returned error=%d\n", (int)error);
+	fflush(stderr);
 	if ( error != 0 ) {
 		return nullptr;
 	}
@@ -1931,11 +1938,16 @@ FontCharsClass::Store_Freetype_Char (WCHAR ch)
 	//	Convert to an anti-aliased bitmap
 	//
 	error = FT_Render_Glyph( FTFace->glyph, FT_RENDER_MODE_NORMAL );
+	fprintf(stderr, "[GX-TRACE] Store_Freetype_Char: FT_Render_Glyph returned error=%d\n", (int)error);
+	fflush(stderr);
 	if ( error != 0 ) {
 		return nullptr;
 	}
 
 	FT_GlyphSlot glyph = FTFace->glyph;
+	fprintf(stderr, "[GX-TRACE] Store_Freetype_Char: glyph slot=%p bitmap.width=%u bitmap.rows=%u advance.x=%ld\n",
+		(void*)glyph, glyph ? glyph->bitmap.width : 0u, glyph ? glyph->bitmap.rows : 0u, glyph ? (long)glyph->advance.x : 0L);
+	fflush(stderr);
 
 	//
 	//	Calculate X position (special case for 'W')
@@ -1981,11 +1993,31 @@ FontCharsClass::Store_Freetype_Char (WCHAR ch)
 	//
 	//	Copy FreeType bitmap to our buffer (convert 8-bit gray → 16-bit format)
 	//
+	// GeneralsX @bugfix Android port 14/07/2026 y_offset/x_offset are only
+	// clamped to >= 0 above, never to the buffer's actual reserved region
+	// (char_width * CharHeight uint16s, carved out of a fixed 32768-entry
+	// FontCharsBuffer in Update_Current_Buffer()). A glyph whose real bitmap
+	// overshoots the font's nominal ascender/descent (bitmap_top taller than
+	// CharAscent, or bitmap.rows taller than CharHeight -- both plausible for
+	// large bold display fonts) pushes dst_index past this glyph's slice and
+	// silently corrupts whatever comes next in the buffer, up to and including
+	// memory past the struct's own fixed array -- a heap write with no
+	// exception and no signal until something unrelated reads the corrupted
+	// memory later. Skip any row/col that would land outside this glyph's
+	// own [0, char_width*CharHeight) region instead of writing blindly.
 	for ( unsigned int row = 0; row < glyph->bitmap.rows; row++ ) {
+		int dst_row = y_offset + (int)row;
+		if ( dst_row < 0 || dst_row >= CharHeight )
+			continue;
+
 		int src_index = row * glyph->bitmap.pitch;
-		int dst_index = (y_offset + row) * char_width;
+		int dst_index = dst_row * char_width;
 
 		for ( unsigned int col = 0; col < glyph->bitmap.width; col++ ) {
+			int dst_col = x_offset + (int)col;
+			if ( dst_col < 0 || dst_col >= char_width )
+				continue;
+
 			//
 			//	Get 8-bit grayscale pixel
 			//
@@ -2001,7 +2033,7 @@ FontCharsClass::Store_Freetype_Char (WCHAR ch)
 			//	SAME FORMAT AS GDI IMPLEMENTATION
 			//
 			uint8 alpha_value = (pixel_value >> 4) & 0xF;
-			curr_buffer_p[dst_index + x_offset + col] = pixel_color | (alpha_value << 12);
+			curr_buffer_p[dst_index + dst_col] = pixel_color | (alpha_value << 12);
 		}
 	}
 

@@ -487,7 +487,11 @@ WindowMsgHandledType GadgetPushButtonSystem( GameWindow *window, UnsignedInt msg
 		case GGM_SET_LABEL:
 		{
 			// set text into the win instance text data field
+			fprintf(stderr, "[GX-TRACE] GadgetPushButtonSystem: about to winSetText window=%p\n", (void*)window);
+			fflush(stderr);
 			window->winSetText( *(UnicodeString*)mData1 );
+			fprintf(stderr, "[GX-TRACE] GadgetPushButtonSystem: winSetText returned window=%p\n", (void*)window);
+			fflush(stderr);
 			break;
 		}
 

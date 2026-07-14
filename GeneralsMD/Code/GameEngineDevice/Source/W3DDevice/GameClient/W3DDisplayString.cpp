@@ -365,7 +365,11 @@ void W3DDisplayString::computeExtents()
 	else
 	{
 
+		fprintf(stderr, "[GX-TRACE] computeExtents: about to Get_Formatted_Text_Extents this=%p len=%u\n", (void*)this, len);
+		fflush(stderr);
 		Vector2 extents = m_textRenderer.Get_Formatted_Text_Extents(getText().str()); //Get_Text_Extents( getText().str() );
+		fprintf(stderr, "[GX-TRACE] computeExtents: Get_Formatted_Text_Extents returned this=%p x=%f y=%f\n", (void*)this, extents.X, extents.Y);
+		fflush(stderr);
 		m_size.x = extents.X;
 		m_size.y = extents.Y;
 
