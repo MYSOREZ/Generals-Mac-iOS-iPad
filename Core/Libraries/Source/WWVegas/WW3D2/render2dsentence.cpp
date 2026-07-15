@@ -203,13 +203,21 @@ Render2DSentenceClass::Render ()
 	//
 	//	Build any textures that are pending
 	//
+	fprintf(stderr, "[GX-TRACE] Render2DSentenceClass::Render: about to Build_Textures pending=%d\n", PendingSurfaces.Count());
+	fflush(stderr);
 	Build_Textures ();
+	fprintf(stderr, "[GX-TRACE] Render2DSentenceClass::Render: Build_Textures returned, renderers=%d\n", Renderers.Count());
+	fflush(stderr);
 
 	//
 	//	Ask each renderer to draw its contents
 	//
 	for (int i = 0; i < Renderers.Count (); i ++) {
+		fprintf(stderr, "[GX-TRACE] Render2DSentenceClass::Render: about to Renderers[%d]->Render()\n", i);
+		fflush(stderr);
 		Renderers[i].Renderer->Render ();
+		fprintf(stderr, "[GX-TRACE] Render2DSentenceClass::Render: Renderers[%d]->Render() returned\n", i);
+		fflush(stderr);
 	}
 }
 
@@ -369,7 +377,11 @@ Render2DSentenceClass::Build_Textures ()
 		//
 		//	Create the new texture
 		//
+		fprintf(stderr, "[GX-TRACE] Build_Textures: about to create TextureClass width=%u\n", desc.Width);
+		fflush(stderr);
 		TextureClass *new_texture = W3DNEW TextureClass (desc.Width, desc.Width, WW3D_FORMAT_A4R4G4B4, MIP_LEVELS_1);
+		fprintf(stderr, "[GX-TRACE] Build_Textures: TextureClass created=%p\n", (void*)new_texture);
+		fflush(stderr);
 		SurfaceClass *texture_surface = new_texture->Get_Surface_Level ();
 
 		new_texture->Get_Filter().Set_U_Addr_Mode(TextureFilterClass::TEXTURE_ADDRESS_CLAMP);
@@ -381,7 +393,12 @@ Render2DSentenceClass::Build_Textures ()
 		//
 		//	Copy the contents of the texture from the surface
 		//
+		fprintf(stderr, "[GX-TRACE] Build_Textures: about to _Copy_DX8_Rects src=%p dst=%p\n",
+			(void*)curr_surface->Peek_D3D_Surface(), (void*)texture_surface->Peek_D3D_Surface());
+		fflush(stderr);
 		DX8Wrapper::_Copy_DX8_Rects (curr_surface->Peek_D3D_Surface (), nullptr, 0, texture_surface->Peek_D3D_Surface (), nullptr);
+		fprintf(stderr, "[GX-TRACE] Build_Textures: _Copy_DX8_Rects returned\n");
+		fflush(stderr);
 		REF_PTR_RELEASE (texture_surface);
 
 		//
@@ -686,7 +703,11 @@ Render2DSentenceClass::Allocate_New_Surface (const WCHAR *text, bool justCalcExt
 		//
 		//	Create the new surface
 		//
+		fprintf(stderr, "[GX-TRACE] Allocate_New_Surface: about to create SurfaceClass size=%d\n", CurrTextureSize);
+		fflush(stderr);
 		CurSurface = NEW_REF (SurfaceClass, (CurrTextureSize, CurrTextureSize, WW3D_FORMAT_A4R4G4B4));
+		fprintf(stderr, "[GX-TRACE] Allocate_New_Surface: SurfaceClass created=%p\n", (void*)CurSurface);
+		fflush(stderr);
 		WWASSERT (CurSurface != nullptr);
 		CurSurface->Add_Ref ();
 
