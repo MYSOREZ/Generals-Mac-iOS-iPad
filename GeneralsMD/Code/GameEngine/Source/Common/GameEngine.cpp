@@ -1162,6 +1162,20 @@ void GameEngine::execute()
 						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw INI-family anonymous enum=%d\n", (int)ie);
 						fflush(stderr);
 					}
+					// GeneralsX @bugfix Android port 16/07/2026 Build 168 ruled out
+					// SaveCode and the INI anonymous enum -- still "unrecognized". The
+					// only remaining engine runtime throw type that lands here is the
+					// XferStatus enum (XFER_* codes, Xfer.h) from the save/load/xfer
+					// serialization system -- consistent with the 'GUI:RecentSave'
+					// window reading a save whose data this build can't parse. Log the
+					// exact XFER_* value so we know which failure (e.g. XFER_UNKNOWN_STRING
+					// == an unrecognized enum-name in the saved data, same pattern as the
+					// earlier menu-load fixes).
+					catch (XferStatus xs)
+					{
+						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw XferStatus=%d\n", (int)xs);
+						fflush(stderr);
+					}
 					catch (const std::exception& se)
 					{
 						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw std::exception what='%s'\n", se.what());
