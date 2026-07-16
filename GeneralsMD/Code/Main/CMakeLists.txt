@@ -135,3 +135,44 @@ endif()
 if(MINGW AND COMMAND add_debug_strip_target)
     add_debug_strip_target(z_generals)
 endif()
+
+# GeneralsX @bugfix Android port 16/07/2026 Hide the engine's global operator
+# new/delete from libmain.so's dynamic symbol table via a linker version script.
+#
+# On Android all loaded libraries share a flat symbol namespace, so libmain.so's
+# exported operator new/delete interpose over the copies inside DXVK
+# (libdxvk_d3d8.so), SDL3 and OpenAL. Our operator new (GameMemoryNull.cpp)
+# memset()s every allocation to zero before returning it -- harmless for the
+# engine's own objects, but it corrupts DXVK's internal resource-pool
+# bookkeeping (DxvkResourceAllocationPool), which stores live free-list state in
+# memory it manages itself and does not expect a foreign new/delete to touch.
+# The corruption is silent and only bites frames later, when DXVK next allocates
+# a GPU resource and dereferences a zeroed/garbage free-list pointer -- matching
+# the silent, delayed, post-menu crash reported in issue #2 (no signal reaches
+# our crash handler). Diagnosis and version-script approach independently found
+# by a sibling GeneralsX Android fork (tarek369/GeneralsZH-Android, commit
+# 467d129) on Exynos/Adreno hardware.
+#
+# Marking the mangled operator new/new[]/delete/delete[] symbols "local" keeps
+# them internal to libmain.so: the engine still resolves its own calls to them
+# statically, while DXVK/SDL3/OpenAL fall back to libc++'s plain malloc-based
+# operators. Safe here specifically because RTS_GAMEMEMORY_ENABLE is OFF on
+# Android (GameMemoryNull's operators are already malloc/free under the hood, so
+# cross-library alloc/free stays consistent).
+if(ANDROID)
+    set(_gx_hide_alloc_map "${CMAKE_CURRENT_BINARY_DIR}/gx_hide_alloc.map")
+    file(WRITE "${_gx_hide_alloc_map}" [=[
+{
+  global:
+    *;
+  local:
+    _Znw*;
+    _Zna*;
+    _Zdl*;
+    _Zda*;
+};
+]=])
+    target_link_options(z_generals PRIVATE
+        "-Wl,--version-script,${_gx_hide_alloc_map}"
+    )
+endif()
