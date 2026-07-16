@@ -769,6 +769,16 @@ void ReleaseCrash(const char *reason)
 {
 	/// do additional reporting on the crash, if possible
 
+	// GeneralsX @bugfix Android port 16/07/2026 Surface the serious-error reason
+	// (and the last DEBUG_CRASH dump) to stderr as well as the separate crash
+	// file. On Android the reporters only capture the stderr log; without this
+	// the "Technical Difficulties..." dialog appears with no clue in the log as
+	// to what actually threw (issue #2). This is the single most useful line for
+	// diagnosing what triggers the serious-error box mid-menu-load.
+	fprintf(stderr, "[GX-RELEASECRASH] ReleaseCrash reason='%s'\n", reason ? reason : "<null>");
+	fprintf(stderr, "[GX-RELEASECRASH] last error dump:\n%s\n", g_LastErrorDump.str());
+	fflush(stderr);
+
 	if (!DX8Wrapper_IsWindowed) {
 		if (ApplicationHWnd) {
 			ShowWindow(ApplicationHWnd, SW_HIDE);
@@ -896,6 +906,12 @@ void ReleaseCrashLocalized(const AsciiString& p, const AsciiString& m)
 	#else
 	// Linux: Output to stderr (game will crash anyway after this)
 	fprintf(stderr, "FATAL ERROR: %s\n%s\n", prompt.str(), mesg.str());
+	// GeneralsX @bugfix Android port 16/07/2026 The prompt/mesg above are just the
+	// generic localized "serious error" text -- dump the last DEBUG_CRASH message
+	// too, which holds the actual cause that led here (issue #2).
+	fprintf(stderr, "[GX-RELEASECRASH] localized crash keys prompt='%s' mesg='%s'\n", p.str(), m.str());
+	fprintf(stderr, "[GX-RELEASECRASH] last error dump:\n%s\n", g_LastErrorDump.str());
+	fflush(stderr);
 	#if defined(SAGE_USE_SDL3)
 	// GeneralsX @bugfix Android port 08/07/2026 stderr is invisible on Android;
 	// show the same message as a native dialog so the user sees WHY the game

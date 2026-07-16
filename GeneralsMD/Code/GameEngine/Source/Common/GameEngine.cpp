@@ -1131,6 +1131,30 @@ void GameEngine::execute()
 					catch (...)
 					{
 					}
+					// GeneralsX @bugfix Android port 16/07/2026 The bare catch(...)
+					// discards which exception actually escaped update() -- on Android
+					// (issue #2) that leaves the "Technical Difficulties..." box with no
+					// clue in the log. Re-throw once to identify the common engine
+					// throw types before falling through to RELEASE_CRASH.
+					try
+					{
+						throw;
+					}
+					catch (ErrorCode ec)
+					{
+						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw ErrorCode=%d\n", (int)ec);
+						fflush(stderr);
+					}
+					catch (const std::exception& se)
+					{
+						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw std::exception what='%s'\n", se.what());
+						fflush(stderr);
+					}
+					catch (...)
+					{
+						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw unrecognized exception type\n");
+						fflush(stderr);
+					}
 					RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
 				}
 			}
