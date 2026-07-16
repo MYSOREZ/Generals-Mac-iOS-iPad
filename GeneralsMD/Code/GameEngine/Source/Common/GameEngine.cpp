@@ -71,6 +71,15 @@
 #include "Common/Registry.h"
 #include "Common/GameCommon.h"	// FOR THE ALLOW_DEBUG_CHEATS_IN_RELEASE #define
 
+// GeneralsX @bugfix Android port 16/07/2026 __cxa_current_exception_type() /
+// __cxa_demangle() are Itanium C++ ABI runtime entry points (libc++abi on
+// Android/bionic, libstdc++/libsupc++ on Linux) -- not available under MSVC's
+// ABI, which has no equivalent public API. Only used inside the update()
+// catch(...) diagnostic below, gated the same way (issue #2).
+#if !defined(_MSC_VER)
+#include <cxxabi.h>
+#endif
+
 #include "GameLogic/Armor.h"
 #include "GameLogic/AI.h"
 #include "GameLogic/CaveSystem.h"
@@ -1197,7 +1206,37 @@ void GameEngine::execute()
 					}
 					catch (...)
 					{
+						// GeneralsX @bugfix Android port 16/07/2026 Every explicit catch
+						// above (ErrorCode/SaveCode/INI-anon/XferStatus/int/const char*/
+						// std::exception) has now been ruled out across builds 167-170 on
+						// two different devices (Adreno 750, Exynos Xclipse), including a
+						// confirmed-fresh install of this exact build (issue #2). Rather
+						// than keep guessing engine types one at a time, ask the C++ ABI
+						// runtime directly what's actually in flight -- __cxa_current_
+						// exception_type() reads it from the exception object's own
+						// typeinfo, independent of any catch clause matching. Android/
+						// bionic uses libc++abi, which supports this. If even this comes
+						// back null/garbage, that itself is strong evidence the exception
+						// object (or the unwind machinery) is memory-corrupted, not just
+						// an engine type we haven't enumerated.
+#if !defined(_MSC_VER)
+						std::type_info* ti = abi::__cxa_current_exception_type();
+						if (ti != nullptr)
+						{
+							int demangleStatus = 0;
+							char* demangled = abi::__cxa_demangle(ti->name(), nullptr, nullptr, &demangleStatus);
+							fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw type='%s' (mangled='%s', demangle_status=%d)\n",
+								demangled ? demangled : "<demangle failed>", ti->name(), demangleStatus);
+							if (demangled)
+								free(demangled);
+						}
+						else
+						{
+							fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw unrecognized exception type (__cxa_current_exception_type returned null)\n");
+						}
+#else
 						fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw unrecognized exception type\n");
+#endif
 						fflush(stderr);
 					}
 					RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
