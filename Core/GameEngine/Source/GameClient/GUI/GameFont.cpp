@@ -195,7 +195,11 @@ GameFont *FontLibrary::getFont( AsciiString name, Int pointSize, Bool bold )
 				font->bold == bold &&
 				font->nameString == name
 			)
+		{
+			fprintf(stderr, "[GX-TRACE] getFont: cache-hit return name=%s size=%d bold=%d font=%p\n", name.str(), pointSize, bold, (void*)font);
+			fflush(stderr);
 			return font;  // found
+		}
 
 	}
 
@@ -230,6 +234,8 @@ GameFont *FontLibrary::getFont( AsciiString name, Int pointSize, Bool bold )
 	linkFont( font );
 
 	// all is done and loaded
+	fprintf(stderr, "[GX-TRACE] getFont: freshly-loaded return name=%s size=%d bold=%d font=%p\n", name.str(), pointSize, bold, (void*)font);
+	fflush(stderr);
 	return font;
 
 }
