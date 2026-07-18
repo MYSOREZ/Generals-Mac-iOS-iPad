@@ -538,7 +538,18 @@ void FFmpegVideoStream::frameRender( VideoBuffer *buffer )
 
 	uint8_t *buffer_data = static_cast<uint8_t *>(buffer->lock());
 	if (buffer_data == nullptr) {
-		DEBUG_LOG(("Failed to lock videobuffer"));
+		// Was a DEBUG_LOG (compiled out in release), which made this failure
+		// invisible in device logs -- and it is precisely what fired on the
+		// Mali-G57 right before its driver-side crash (issue #9, build 176:
+		// the sws context line printed but the frame-geometry line right
+		// after this lock never did). Keep it loud and rate-limited.
+		static int lockFailLogs = 0;
+		if (lockFailLogs < 8) {
+			++lockFailLogs;
+			fprintf(stderr, "[GX-VIDBUF] frameRender: buffer->lock() FAILED (dst=%ux%u)\n",
+				buffer->width(), buffer->height());
+			fflush(stderr);
+		}
 		return;
 	}
 

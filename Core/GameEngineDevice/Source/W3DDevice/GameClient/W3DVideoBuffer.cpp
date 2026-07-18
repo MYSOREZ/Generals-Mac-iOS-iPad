@@ -46,6 +46,7 @@
 //----------------------------------------------------------------------------
 
 #include <cstdio>
+#include <cstring>
 
 #include "Common/GameMemory.h"
 #include "WW3D2/texture.h"
@@ -124,8 +125,18 @@ Bool W3DVideoBuffer::allocate( UnsignedInt width, UnsignedInt height )
 	m_height = height;
 	m_textureWidth = width;
 	m_textureHeight = height;
+#if !defined(__ANDROID__)
+	// Pads to power-of-two for ancient D3D hardware caps. Skipped on Android
+	// (DXVK/Vulkan guarantees NPOT): the movie texture was the ONLY per-frame
+	// lock/write/draw texture with a big padded tail (800x600 stretched to
+	// 1024x1024), and the Mali-G57 driver deterministically segfaults on a
+	// worker thread (fault_addr=0x50, mmtrt's build-175/176 logs, issue #9)
+	// right when the first movie frame goes through it. An exact-size buffer
+	// removes both the padded-garbage region and the size class entirely,
+	// and the UV math below (m_width/m_textureWidth) becomes 1:1.
 	unsigned int temp_depth=1;
 	TextureLoader::Validate_Texture_Size( m_textureWidth, m_textureHeight, temp_depth);
+#endif
 
 	WW3DFormat w3dFormat = TypeToW3DFormat(  m_format );
 
@@ -141,23 +152,21 @@ Bool W3DVideoBuffer::allocate( UnsignedInt width, UnsignedInt height )
 		return FALSE;
 	}
 
-	if ( lock() == nullptr )
+	void *initialPixels = lock();
+	if ( initialPixels == nullptr )
 	{
 		free();
 		return FALSE;
 	}
 
-	// GeneralsX @bugfix Android port 18/07/2026 issue #9 follow-up: after the
-	// Vulkan device-creation fix, a device that now boots reaches the loading
-	// screen and then hard-faults inside the vendor Mali GLES driver
-	// (SIGSEGV, fault_addr=0x50) a few log lines after a video-frame
-	// colorspace conversion. That's consistent with a video-frame blit
-	// (FFmpegVideoStream::frameRender -> sws_scale) writing past the end of
-	// this locked surface and corrupting adjacent GPU-mapped memory, which
-	// only actually crashes later when the driver touches the clobbered
-	// region -- log the real vs. padded dimensions and the locked pitch once
-	// per buffer so a test log can confirm or rule this out.
-	fprintf(stderr, "[GX-VIDBUF] allocate visible=%ux%u padded=%ux%u pitch=%u format=%d\n",
+	// GeneralsX @bugfix Android port 18/07/2026 issue #9 follow-up: the
+	// surface starts out with whatever the allocator left in it, gets
+	// marked dirty by this very lock, and is then DRAWN for several frames
+	// before the first movie frame is ever blitted in -- uploading and
+	// displaying uninitialized memory. Zero it (black) while it's locked.
+	memset( initialPixels, 0, (size_t)m_pitch * m_textureHeight );
+
+	fprintf(stderr, "[GX-VIDBUF] allocate visible=%ux%u texture=%ux%u pitch=%u format=%d\n",
 		m_width, m_height, m_textureWidth, m_textureHeight, m_pitch, (int)m_format);
 	fflush(stderr);
 
