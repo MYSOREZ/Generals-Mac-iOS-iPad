@@ -30,6 +30,8 @@
 //         Includes
 //----------------------------------------------------------------------------
 
+#include <cstdio>
+
 #include "Lib/BaseType.h"
 #include "VideoDevice/FFmpeg/FFmpegVideoPlayer.h"
 #include "Common/AudioAffect.h"
@@ -542,6 +544,34 @@ void FFmpegVideoStream::frameRender( VideoBuffer *buffer )
 
 	int dst_strides[] = { (int)buffer->pitch() };
 	uint8_t *dst_data[] = { buffer_data };
+
+	// GeneralsX @bugfix Android port 18/07/2026 issue #9 follow-up: log the
+	// exact geometry of every video-frame blit into the locked surface. A
+	// Mali device that now gets past DXVK device creation reaches this code
+	// path (loading-screen video) and then hard-faults inside the vendor
+	// GLES driver a few lines later -- if dst_strides[0] is ever smaller
+	// than one destination row actually needs, sws_scale would write past
+	// the row into the next one and eventually off the end of the surface,
+	// corrupting whatever GPU-mapped memory follows it (which would only
+	// visibly crash later, inside the driver, matching what we're seeing).
+	static bool loggedOnce = false;
+	if (!loggedOnce) {
+		loggedOnce = true;
+		int bytesPerPixel = 4;
+		switch (dst_pix_fmt) {
+			case AV_PIX_FMT_RGB24: bytesPerPixel = 3; break;
+			case AV_PIX_FMT_BGR0:  bytesPerPixel = 4; break;
+			case AV_PIX_FMT_RGB565: bytesPerPixel = 2; break;
+			case AV_PIX_FMT_RGB555: bytesPerPixel = 2; break;
+			default: break;
+		}
+		int minStride = (int)buffer->width() * bytesPerPixel;
+		fprintf(stderr, "[GX-VIDBUF] frameRender dst=%ux%u pitch=%d bpp=%d min_required_stride=%d %s\n",
+			buffer->width(), buffer->height(), dst_strides[0], bytesPerPixel, minStride,
+			dst_strides[0] < minStride ? "!!! STRIDE TOO SMALL !!!" : "ok");
+		fflush(stderr);
+	}
+
 	[[maybe_unused]] int result =
 		sws_scale(m_swsContext, m_frame->data, m_frame->linesize, 0, height(), dst_data, dst_strides);
 	DEBUG_ASSERTLOG(result >= 0, ("Failed to scale frame"));

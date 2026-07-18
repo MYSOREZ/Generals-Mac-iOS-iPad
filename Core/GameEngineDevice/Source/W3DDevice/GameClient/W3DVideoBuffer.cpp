@@ -45,6 +45,8 @@
 //         Includes
 //----------------------------------------------------------------------------
 
+#include <cstdio>
+
 #include "Common/GameMemory.h"
 #include "WW3D2/texture.h"
 #include "WW3D2/textureloader.h"
@@ -144,6 +146,20 @@ Bool W3DVideoBuffer::allocate( UnsignedInt width, UnsignedInt height )
 		free();
 		return FALSE;
 	}
+
+	// GeneralsX @bugfix Android port 18/07/2026 issue #9 follow-up: after the
+	// Vulkan device-creation fix, a device that now boots reaches the loading
+	// screen and then hard-faults inside the vendor Mali GLES driver
+	// (SIGSEGV, fault_addr=0x50) a few log lines after a video-frame
+	// colorspace conversion. That's consistent with a video-frame blit
+	// (FFmpegVideoStream::frameRender -> sws_scale) writing past the end of
+	// this locked surface and corrupting adjacent GPU-mapped memory, which
+	// only actually crashes later when the driver touches the clobbered
+	// region -- log the real vs. padded dimensions and the locked pitch once
+	// per buffer so a test log can confirm or rule this out.
+	fprintf(stderr, "[GX-VIDBUF] allocate visible=%ux%u padded=%ux%u pitch=%u format=%d\n",
+		m_width, m_height, m_textureWidth, m_textureHeight, m_pitch, (int)m_format);
+	fflush(stderr);
 
 	unlock();
 
