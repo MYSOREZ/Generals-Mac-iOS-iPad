@@ -635,10 +635,15 @@ int main(int argc, char* argv[])
 			// BuildUserDataPathFromRegistry) a plain, top-level, always-visible
 			// home instead of the internal-storage path HOME points at above.
 			// This is where custom maps (Maps/), save games, and Options.ini
-			// now live -- the direct Android analog of
-			// "Documents\Command and Conquer Generals Zero Hour Data" on
-			// Windows, which is exactly why players have been unable to add
-			// custom maps at all until now (issue #9 comments). Needs
+			// now live -- laid out exactly like the reference (Windows)
+			// platform's Documents folder: a shared "Generals" directory
+			// holding one leaf per game variant ("Command and Conquer
+			// Generals Zero Hour Data" for this port; "Command and Conquer
+			// Generals Data" alongside it, matching vanilla Generals' own
+			// Documents leaf name, reserved for if/when that variant is
+			// also built for Android -- RTS_BUILD_GENERALS is OFF today).
+			// This is exactly why players have been unable to add custom
+			// maps at all until now (issue #9 comments). Needs
 			// MANAGE_EXTERNAL_STORAGE (already requested and granted via
 			// SetupActivity for the GameData folder picker) to write outside
 			// the app's own sandboxed directories. Multi-user-safe the same
@@ -646,11 +651,29 @@ int main(int argc, char* argv[])
 			// storage mount is always /storage/emulated/<userId>, and
 			// per-user UIDs are always userId*100000 + appId.
 			int userId = (int)(getuid() / 100000);
-			char userDataDir[300];
-			int len = snprintf(userDataDir, sizeof(userDataDir),
-				"/storage/emulated/%d/GeneralsZH Data", userId);
-			if (len > 0 && (size_t)len < sizeof(userDataDir)) {
-				setenv("GENERALSX_USERDATA_DIR", userDataDir, 1);
+			char generalsRoot[280];
+			int rootLen = snprintf(generalsRoot, sizeof(generalsRoot),
+				"/storage/emulated/%d/Generals", userId);
+			if (rootLen > 0 && (size_t)rootLen < sizeof(generalsRoot)) {
+				char zhUserDataDir[400];
+				int zhLen = snprintf(zhUserDataDir, sizeof(zhUserDataDir),
+					"%s/Command and Conquer Generals Zero Hour Data", generalsRoot);
+				if (zhLen > 0 && (size_t)zhLen < sizeof(zhUserDataDir)) {
+					setenv("GENERALSX_USERDATA_DIR", zhUserDataDir, 1);
+				}
+
+				// Reserved sibling for vanilla Generals, not used by this
+				// (Zero Hour) build -- created so the "Generals" folder's
+				// layout matches Windows Documents from the start rather
+				// than growing a second leaf only whenever that variant
+				// eventually ships.
+				char baseUserDataDir[400];
+				int baseLen = snprintf(baseUserDataDir, sizeof(baseUserDataDir),
+					"%s/Command and Conquer Generals Data", generalsRoot);
+				if (baseLen > 0 && (size_t)baseLen < sizeof(baseUserDataDir)) {
+					mkdir(generalsRoot, 0755);
+					mkdir(baseUserDataDir, 0755);
+				}
 			}
 		}
 		if (cachePath != nullptr) {
