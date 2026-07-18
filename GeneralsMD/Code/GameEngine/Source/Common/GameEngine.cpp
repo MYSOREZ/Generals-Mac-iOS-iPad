@@ -1068,6 +1068,36 @@ void GameEngine::update()
 extern bool DX8Wrapper_IsWindowed;
 extern HWND ApplicationHWnd;
 
+// GeneralsX @bugfix Android port 18/07/2026 Survive exceptions escaping
+// GameEngine::update() instead of killing the session (issue #2). The
+// original engine turns ANY exception reaching execute()'s per-frame catch
+// into RELEASE_CRASH -- the "Technical Difficulties..." box -- which on the
+// affected devices fires right as the shell menu comes up, from a throw
+// whose type doesn't match any catch clause we've enumerated (a per-TU
+// anonymous-enum identity per the '$_0' typeinfo, see the catch chain
+// below). Three earlier issue-#2 fixes (science lookup, CommandButton
+// tokens, Eva events) were all the same pattern: a runtime lookup throwing
+// over one unrecognized data token that the game could perfectly well keep
+// running without. Rather than keep fixing one thrower per tester round,
+// treat a per-frame exception like those fixes treat a bad token: log it,
+// abandon the rest of that frame, and keep the session alive. A generous
+// cap guards against a session that's genuinely wedged (throwing every
+// frame forever burns the log and the battery for nothing); below it, a
+// glitched frame beats a dead game.
+static Bool recoverFromUpdateException()
+{
+	static Int total = 0;
+	++total;
+	if (total > 2000)
+		return FALSE;
+	if (total <= 20 || (total % 200) == 0)
+	{
+		fprintf(stderr, "[GX-RECOVER] GameEngine::update threw (occurrence %d) -- skipping rest of frame, continuing\n", total);
+		fflush(stderr);
+	}
+	return TRUE;
+}
+
 /** -----------------------------------------------------------------------------------------------
  * The "main loop" of the game engine. It will not return until the game exits.
  */
@@ -1123,11 +1153,17 @@ void GameEngine::execute()
 				// copy constructor, so catching by value double-frees mFailureMessage).
 				catch (const INIException& e)
 				{
-					// Release CRASH doesn't return, so don't worry about executing additional code.
-					if (e.mFailureMessage)
-						RELEASE_CRASH((e.mFailureMessage));
-					else
-						RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
+					fprintf(stderr, "[GX-RELEASECRASH] GameEngine::update threw INIException: %s\n",
+						e.mFailureMessage ? e.mFailureMessage : "<no message>");
+					fflush(stderr);
+					if (!recoverFromUpdateException())
+					{
+						// Release CRASH doesn't return, so don't worry about executing additional code.
+						if (e.mFailureMessage)
+							RELEASE_CRASH((e.mFailureMessage));
+						else
+							RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
+					}
 				}
 				catch (...)
 				{
@@ -1239,7 +1275,8 @@ void GameEngine::execute()
 #endif
 						fflush(stderr);
 					}
-					RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
+					if (!recoverFromUpdateException())
+						RELEASE_CRASH(("Uncaught Exception in GameEngine::update"));
 				}
 			}
 
